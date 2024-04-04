@@ -1,92 +1,117 @@
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto 
 goto L31
@@ -94,46 +119,57 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -141,33 +177,40 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto 
 goto L46
@@ -175,19 +218,23 @@ t25 =
 goto L46
  = t25
 goto L46
-L46
+L46:
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -195,38 +242,46 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto 
-L51
+L51:
 goto L6
-L53
+:
+L53:
 goto L6
 goto 
 goto L46
@@ -234,19 +289,23 @@ t25 =
 goto L46
  = t25
 goto L46
-L46
+L46:
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -254,33 +313,40 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto 
 goto L56
@@ -288,11 +354,12 @@ t29 =
 goto L56
 t30 = t29
 goto L56
-L56
+L56:
 goto 
-L51
+L51:
 goto L6
-L53
+:
+L53:
 goto L6
 goto 
 goto L46
@@ -300,19 +367,23 @@ t25 =
 goto L46
  = t25
 goto L46
-L46
+L46:
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -320,33 +391,40 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto 
 goto L61
@@ -354,18 +432,19 @@ t33 =
 goto L61
 t34 = t33
 goto L61
-L61
+L61:
 goto 
 goto L56
 t29 = 
 goto L56
 t30 = t29
 goto L56
-L56
+L56:
 goto 
-L51
+L51:
 goto L6
-L53
+:
+L53:
 goto L6
 goto 
 goto L46
@@ -373,19 +452,23 @@ t25 =
 goto L46
  = t25
 goto L46
-L46
+L46:
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -393,56 +476,64 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto 
 t36 = 
 goto L66
-L66
+L66:
 goto 
 goto L61
 t33 = 
 goto L61
 t34 = t33
 goto L61
-L61
+L61:
 goto 
 goto L56
 t29 = 
 goto L56
 t30 = t29
 goto L56
-L56
+L56:
 goto 
-L51
+L51:
 goto L6
-L53
+:
+L53:
 goto L6
 goto 
 goto L46
@@ -450,19 +541,23 @@ t25 =
 goto L46
  = t25
 goto L46
-L46
+L46:
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -470,33 +565,40 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto 
 goto L69
@@ -504,29 +606,30 @@ t39 =
 goto L69
 t40 = t39
 goto L69
-L69
+L69:
 goto 
 t36 = 
 goto L66
-L66
+L66:
 goto 
 goto L61
 t33 = 
 goto L61
 t34 = t33
 goto L61
-L61
+L61:
 goto 
 goto L56
 t29 = 
 goto L56
 t30 = t29
 goto L56
-L56
+L56:
 goto 
-L51
+L51:
 goto L6
-L53
+:
+L53:
 goto L6
 goto 
 goto L46
@@ -534,19 +637,23 @@ t25 =
 goto L46
  = t25
 goto L46
-L46
+L46:
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -554,67 +661,75 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto 
 t42 = 
 goto L74
-L74
+L74:
 goto 
 goto L69
 t39 = 
 goto L69
 t40 = t39
 goto L69
-L69
+L69:
 goto 
 t36 = 
 goto L66
-L66
+L66:
 goto 
 goto L61
 t33 = 
 goto L61
 t34 = t33
 goto L61
-L61
+L61:
 goto 
 goto L56
 t29 = 
 goto L56
 t30 = t29
 goto L56
-L56
+L56:
 goto 
-L51
+L51:
 goto L6
-L53
+:
+L53:
 goto L6
 goto 
 goto L46
@@ -622,19 +737,23 @@ t25 =
 goto L46
  = t25
 goto L46
-L46
+L46:
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -642,73 +761,82 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 t44 = ==
 goto 
-L77
+L77:
 goto exit
-L79
+:
+L79:
 goto exit
 goto 
 t42 = 
 goto L74
-L74
+L74:
 goto 
 goto L69
 t39 = 
 goto L69
 t40 = t39
 goto L69
-L69
+L69:
 goto 
 t36 = 
 goto L66
-L66
+L66:
 goto 
 goto L61
 t33 = 
 goto L61
 t34 = t33
 goto L61
-L61
+L61:
 goto 
 goto L56
 t29 = 
 goto L56
 t30 = t29
 goto L56
-L56
+L56:
 goto 
-L51
+L51:
 goto L6
-L53
+:
+L53:
 goto L6
 goto 
 goto L46
@@ -716,19 +844,23 @@ t25 =
 goto L46
  = t25
 goto L46
-L46
+L46:
 function divide_numbers:
-beginfunc
-L40
-t19= popparam
-t20=t19!=NULL
-ift20gotoL40
-L41
+beginfunc 
+L40:
+:
+t19 = popparam
+t20 = t19 != NULL
+if t20 goto L40:
+:
+L41:
+:
 goto L31
-L40
+L40:
+:
 goto L8
-return
-endfunc
+return 
+endfunc 
 goto L8
 goto 
 goto L31
@@ -736,33 +868,40 @@ t14 =
 goto L31
 t15 = t14
 goto L31
-L31
+L31:
 goto L10
 goto L11
 function factorial:
-beginfunc
-L25
-t8= popparam
-t9=t8!=NULL
-ift9gotoL25
-L26
-beginfunc
-L25
+beginfunc 
+L25:
+:
+t8 = popparam
+t9 = t8 != NULL
+if t9 goto L25:
+:
+L26:
+beginfunc 
+L25:
+:
 goto L12
-return
-endfunc
+return 
+endfunc 
 goto L12
 function multiply_numbers:
-beginfunc
-L19
-t4= popparam
-t5=t4!=NULL
-ift5gotoL19
-L20
-L19
+beginfunc 
+L19:
+:
+t4 = popparam
+t5 = t4 != NULL
+if t5 goto L19:
+:
+L20:
+:
+L19:
+:
 goto L13
-return
-endfunc
+return 
+endfunc 
 goto L13
 goto exit
 exit:

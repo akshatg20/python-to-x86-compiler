@@ -50,7 +50,7 @@ string* gen(string s) {
 }
 
 string* label(string* s) {
-    *s = *s + "\n";
+    *s = *s + ":\n";
     return s;
 
 }
@@ -256,13 +256,13 @@ int generate3AC(ASTNode* n) {
 
         n->code = merge(8,
                     gen("function " + n->children[1]->content + ":"),
-                    gen("beginfunc"),
+                    gen("beginfunc "),
                     n->children[2]->code,
                     label(lab),
                     n->children[6]->code,
                     gen("goto " + *(n->children[6]->next)),
-                    gen("return"),
-                    gen("endfunc")
+                    gen("return "),
+                    gen("endfunc ")
         );
         
         if(debug3ac) cout<< " HI WORLD3" <<endl;
@@ -320,10 +320,10 @@ int generate3AC(ASTNode* n) {
 
         n->code = merge(6,
                     label(lab),
-                    gen(*(temp) + "= popparam"),
-                    gen(*(temp2) +  "=" + *(temp) +  "!=NULL"),
-                    gen("if" + *(temp2) + "goto" + *label(lab)),
-                    gen(*(temp) + "=" + *(n->children[2]->val)),
+                    gen(*(temp) + " = popparam"),
+                    gen(*(temp2) +  " = " + *(temp) +  " != NULL"),
+                    gen("if " + *(temp2) + " goto " + *label(lab)),
+                    gen(*(temp) + " = " + *(n->children[2]->val)),
                     label(lab2)
                 );
         if(after3ac) cout << "At" << "(" << n->type << " | " << n->name << ")\n" << *(n->code) << "\n";
@@ -347,10 +347,10 @@ int generate3AC(ASTNode* n) {
 
         n->code = merge(6,
                     label(lab),
-                    gen(*(temp) + "= popparam"),
-                    gen(*(temp2) +  "=" + *(temp) +  "!=NULL"),
-                    gen("if" + *(temp2) + "goto" + *label(lab)),
-                    gen(*(temp) + "=" + *(n->children[2]->val)),
+                    gen(*(temp) + " = popparam"),
+                    gen(*(temp2) +  " = " + *(temp) +  " != NULL"),
+                    gen("if " + *(temp2) + " goto " + *label(lab)),
+                    gen(*(temp) + " = " + *(n->children[2]->val)),
                     label(lab2)
                 );
         if(after3ac) cout << "At" << "(" << n->type << " | " << n->name << ")\n" << *(n->code) << "\n";
@@ -377,9 +377,9 @@ int generate3AC(ASTNode* n) {
 
                 n->code = merge(5,
                     label(lab),
-                    gen(*(temp) + "= popparam"),
-                    gen(*(temp2) +  "=" + *(temp) +  "!=NULL"),
-                    gen("if" + *(temp2) + "goto" + *label(lab)),
+                    gen(*(temp) + " = popparam"),
+                    gen(*(temp2) +  " = " + *(temp) +  " != NULL"),
+                    gen("if " + *(temp2) + " goto " + *label(lab)),
                     label(lab2)
                 );
         if(after3ac) cout << "At" << "(" << n->type << " | " << n->name << ")\n" << *(n->code) << "\n";
@@ -407,9 +407,9 @@ int generate3AC(ASTNode* n) {
 
         n->code = merge(5,
                     label(lab),
-                    gen(*(temp) + "= popparam"),
-                    gen(*(temp2) +  "=" + *(temp) +  "!=NULL"),
-                    gen("if" + *(temp2) + "goto" + *label(lab)),
+                    gen(*(temp) + " = popparam"),
+                    gen(*(temp2) +  " = " + *(temp) +  " != NULL"),
+                    gen("if " + *(temp2) + " goto " + *label(lab)),
                     label(lab2)
                 );
         if(after3ac) cout << "At" << "(" << n->type << " | " << n->name << ")\n" << *(n->code) << "\n";
@@ -431,10 +431,10 @@ int generate3AC(ASTNode* n) {
 
         n->code = merge(6,
                     label(lab),
-                    gen(*(temp) + "= popparam"),
-                    gen(*(temp2) +  "=" + *(temp) +  "!=NULL"),
-                    gen("if" + *(temp2) + "goto" + *label(lab)),
-                    gen(*temp + "=" + *(n->children[4]->val)),
+                    gen(*(temp) + " = popparam"),
+                    gen(*(temp2) +  " = " + *(temp) +  " != NULL"),
+                    gen("if " + *(temp2) + " goto " + *label(lab)),
+                    gen(*temp + " = " + *(n->children[4]->val)),
                     label(lab2)
                 );
         if(after3ac) cout << "At" << "(" << n->type << " | " << n->name << ")\n" << *(n->code) << "\n";
@@ -456,9 +456,9 @@ int generate3AC(ASTNode* n) {
 
         n->code = merge(5,
                     label(lab),
-                    gen(*(temp) + "= popparam"),
-                    gen(*(temp2) +  "=" + *(temp) +  "!=NULL"),
-                    gen("if" + *(temp2) + "goto" + *label(lab)),
+                    gen(*(temp) + " = popparam"),
+                    gen(*(temp2) +  " = " + *(temp) +  " != NULL"),
+                    gen("if " + *(temp2) + " goto " + *label(lab)),
                     label(lab2)
                 ); 
         if(after3ac) cout << "At" << "(" << n->type << " | " << n->name << ")\n" << *(n->code) << "\n";
@@ -628,7 +628,7 @@ int generate3AC(ASTNode* n) {
 
         n->code = merge(2,
             (n->children)[0]->code,
-            gen("goto " + *((n->children)[0]->next) + "\n")
+            gen("goto " + *((n->children)[0]->next) + " \n")
         );
         if(after3ac) cout << "At" << "(" << n->type << " | " << n->name << ")\n" << *(n->code) << "\n";
         if(printcode) { cout<<"CODE for " << n->type << "\n" << *(n->code) << endl; }
@@ -642,7 +642,7 @@ int generate3AC(ASTNode* n) {
 
         n->code = merge(2,
             n->children[0]->code,
-            gen("goto " + *((n->children)[0]->next) + "\n")
+            gen("goto " + *((n->children)[0]->next) + " \n")
         );
         if(after3ac) cout << "At" << "(" << n->type << " | " << n->name << ")\n" << *(n->code) << "\n";
         if(printcode) { cout<<"CODE for " << n->type << "\n" << *(n->code) << endl; }
@@ -1335,7 +1335,7 @@ int generate3AC(ASTNode* n) {
         n->code = merge(11,
             n->children[2]->code,
             gen("if " + *(n->children[2]->addr) + " goto " + *(n->children[2]->tr) + "\n"),
-            gen("ifFalse" + *(n->children[2]->addr) + " goto " + *(n->children[2]->fl) + "\n"),
+            gen("ifFalse " + *(n->children[2]->addr) + " goto " + *(n->children[2]->fl) + "\n"),
             label(n->children[0]->tr),
             n->children[0]->code,
             gen(*(n->addr) + " = " + *(n->children[0]->val) + "\n"),

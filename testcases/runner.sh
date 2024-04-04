@@ -1,4 +1,4 @@
-FILE="test6"  # No spaces around the equal sign for variable assignment
+FILE="test1"  # No spaces around the equal sign for variable assignment
 
 cd ../src/
 make clean
