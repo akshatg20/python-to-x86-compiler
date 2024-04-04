@@ -1,0 +1,47 @@
+**Agenda for the Meeting**
+    -> Discuss points related to the meeting Discussion 5.
+    -> Finalize the details about milestone 1 of the project.
+
+**Points to Discuss**
+0) Other extra points
+    -> Please download Bison 3.8.1 from the zip archive (we may have version problems in future).
+        ==> It is available on - https://launchpad.net/bison/+download
+        ==> Compilation instructions available on - https://www.linuxfromscratch.org/lfs/view/development/chapter07/bison.html
+        ==> This works atleast correctly for linux. Check whether it works on MacOS.
+            -> You may need to add execute permissions for the program files which give error. Last step may require admin permissions.
+1) Generation of Abstract Syntax Tree.
+    -> Algorithm for generating AST is to be confirmed.
+    -> We have to finalize and merge the AST generation with the parser. 
+2) Error Handling in Python (Whatever is required till the parser level).
+    -> What are the new rules required to be writte so that atleast the offending token is catched and an error is returned in the output which cooresponds to the grammatical error catched by the parser alongwith the line number.
+3) Support for special compilation flags as mentioned in the PDF.
+4) Any important information from Piazza Forums.
+    -> Please take note of these - @106, @108
+5) Any important information from Milestone 1 latest PDF.
+    -> Discuss the content in the .log files for each person. Does that have anything important for Milestone 1?
+    -> Match the progress done with the initial plan laid out in "plan.log"
+6) Any conflicting programming technique identified by reading abut the Milestone 2 PDF.
+7) Confirmation of the got output with some other groups (atleast for the public testcases).
+8) Rigorous Compilation testing
+    -> Make a script for compiling and running the complete toolchain under "/src"
+    -> Fiddle with a few inputs to make them (1) Lexically Wrong (2) Grammatically Wrong
+        -> Check the generated error messages for them.
+    -> For correct inputs check the proper generation of a PDF containing the correct AST for that input program.
+9) Finalize the file structure in the repository for submission
+    -> All extra wasteful code to be transported from "\src" to "\archives".
+    -> Milestone 1 documentation file to be added to "\doc".
+    -> Final 5 private testcases (non-trivial with >=40 lines witout comments) to be pushed in "\testcases".
+    -> Addition of compilation toolchain execution instructions (and also relevant bash scripts) in main README.
+10) Have you guys handled brackets for arithmetic expressions? Python grammar doesn't seem to have them?
+11) We have to delete delimeters and newlines from final code - Why ?
+12) What about makefile?
+
+**Identified Points to Remember**
+1) "Runtime Exception" detection in public testcases for annotation with the "list" type name.
+2) Important assumptions for the project -
+    -> Ignore soft keywords, del keyword, walrus (:=) operator, generator expressions, list comprehension, with statements, multiple assignments, slicing, multiple return
+    -> Inputs will use two spaces for indentation
+    -> Dunders are limited to __name__, __main__, and __init__
+    -> All input test cases will have an if __name__ == "__main__": bloc
+    -> All test cases will have a final newline
+3) 

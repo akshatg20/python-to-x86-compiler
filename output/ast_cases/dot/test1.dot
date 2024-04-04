@@ -1,0 +1,47 @@
+Graph {
+node1 [label="continued_file_input ()"];
+node2 [label="continued_file_input ()"];
+node3 [label="continued_file_input ()"];
+node4 [label="continued_file_input (=)"];
+node5 [label="testlist_star_expr (ascii_bytes)"];
+node6 [label="testlist_star_expr (b'Hello, World!')"];
+node7 [label="simple_stmt ()"];
+node8 [label="NAME (print)"];
+node9 [label="trailers (ascii_bytes)"];
+node10 [label="for_stmt (for$in)"];
+node11 [label="exprlist (byte)"];
+node12 [label="testlist (ascii_bytes)"];
+node13 [label="suite ()"];
+node14 [label="NAME (print)"];
+node15 [label="trailers ()"];
+node16 [label="test (byte)"];
+node17 [label="argument (=)"];
+node18 [label="test (end)"];
+node19 [label="test (' ')"];
+node20 [label="simple_stmt ()"];
+node21 [label="NAME (print)"];
+node22 [label="trailers ( () )"];
+
+node1 -- node2;
+node2 -- node3;
+node3 -- node4;
+node4 -- node5;
+node4 -- node6;
+node3 -- node7;
+node7 -- node8;
+node7 -- node9;
+node2 -- node10;
+node10 -- node11;
+node10 -- node12;
+node10 -- node13;
+node13 -- node14;
+node13 -- node15;
+node15 -- node16;
+node15 -- node17;
+node17 -- node18;
+node17 -- node19;
+node1 -- node20;
+node20 -- node21;
+node20 -- node22;
+
+}

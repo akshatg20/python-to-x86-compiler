@@ -1,0 +1,64 @@
+# Apart from the instructions defined on Pg 364 and 365 of DRAG Book consider the following instructions
+# "return" - It is a combination of "goto" and "call" function. It returns the control to the next instruction after "call"
+# "exit" - End the program
+# "print 1" - Call a standard library function print
+# "allocmem 1" - Allocation of memory
+# "beginfunc" and "endfunc" - Marks beginning and end of functions
+# "stackpointer +xxx" and "stackpointer -yyy" used for setting function calls on stack
+# "popparam" to "pop" a parameter from the "param" stack which is pushed into using "param t" type instruction
+---------------------------------------------------------------------------------------------------------------------------------
+
+goto main
+exit
+
+MyClass.__init__:
+    beginfunc
+    t3 = popparam
+    return
+    endfunc
+
+MyClass.method1:
+    beginfunc
+    t4 = popparam
+    t5 = "This is method 1"
+    param t5
+    stackpointer +xxx
+    call print, 1
+    stackpointer -yyy
+    return
+    endfunc
+
+MyClass.method2:
+    beginfunc
+    t6 = popparam
+    t7 = "This is method 2"
+    param t7
+    stackpointer +xxx
+    call print, 1
+    stackpointer -yyy
+    return
+    endfunc
+
+main:
+    beginfunc
+    t1 = 1
+    param t1
+    stackpointer +xxx
+    call allocmem, 1
+    stackpointer -yyy
+    t2 = popparam
+    param t2
+    stackpointer +xxx
+    call MyClass.__init__, 1
+    stackpointer -yyy
+    param t2
+    stackpointer + xxx
+    call MyClass.method1, 1
+    stackpointer -yyy
+    return
+    endfunc
+
+-----------------------------------------------------------------------------------------------------------------------------------
+# obj is a Name which corresponds to an address in actual x86 code - The address will be available with help of Symbol Table in Milestone 3.
+# param will be implemented using standard x86 function call convention in Milestone 3.
+# call, return and goto instructions can be directly translated to x86 code.

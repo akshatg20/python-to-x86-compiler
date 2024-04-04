@@ -1,0 +1,70 @@
+**Agenda for the meeting**
+1) Decide work to be done till next meeting.
+2) Discuss about meeting schedule and personal commitments.
+3) Explain and discuss the problem statement.
+4) Decide on an action plan for progress - (1) Scanner then (2) Parser (After completing Assignment 2)
+
+**About Late Submission**
+1) Personal Involvements (till 3rd march)
+a) Akshat Gupta
+    -> Midsem
+    -> UGP Work (May increase with time)
+    -> Major workload will start peaking after midsem
+b) Devansh Kumar Jha
+    -> Midsem (18 feb - 24 feb everyday)
+    -> 4 quizzes before midsem (2nd feb, 5th feb, 10th feb, 14th feb)
+    -> 4 assignments before midsem (Minor - EE301*1, EE311*1, Major - EE360*1, CS335*1)
+    -> Can't give dedicated time throughout
+c) Shashwat Gupta
+    -> Midsem
+    -> Non-Conventional Workload in April - Bahut Saara
+2) We have 3 milestones and 4 free days (with day gradularity**)
+    -> 1st milestone (till 3rd march)
+    -> 2nd milestone (approximately complete march month)
+    -> 3rd milestone (approximately complete april month)
+    -> Usage
+        -> Obviously the last month of the semester will be the most vulnerable
+        -> Proposal : Most of the extra days to be used in last milestone only (any non-conventional workload during the semester ?)
+3) 
+
+**Regular Meetings**
+1) BiWeekly Meetings for project updates
+    -> Tentative duration of each meeting - (30 mins - 2 hrs)
+    -> Timing Slots - (After 11 PM)
+    -> Days - Weekends (Mostly Sunday and Thursday)
+        -> Please keep this slot free on Sunday
+        -> Next meeting (3rd February 2024 Sunday)
+    -> Tentative Venue
+        -> After Midsem - Mostly offline (Hall 1 / Hall 9 / RM Building)
+        -> Before Midsem - Accordingly
+    -> Please inform about any time changes or cancellations atleast a day in advance
+        -> Will mostly include schedule of quiz / midsem next day or assignment submission on Sunday night.
+        -> If going out of campus please inform a day in advance.
+        -> In these cases we can meet on Saturday or Monday night (but weekly meetings should be conducted atleast)
+
+**Technical Details**
+1) Bison Version - 3.5.1 (Sir has given manual and hinted towards using 3.8.1 Bison)
+2) Flex Version - 2.6.4 (Same as sir's manual)
+3) Machine - WSL2 Ubuntu 20.04 LTS on Windows 11 (What is yours - can you download WSL?)
+4) Directory Structure
+    -> /logs - For all extra rough files related to the project (please add your rough work/doubts/assumptions/points you want to discuss) in your respective log files itself so that others can also refer.
+    -> /doc - Documentation and problem statement related PDFs. Or any other PDF you want to share.
+    -> /src - Source code for all milestones (every supporting program file will be placed in this folder)
+    -> /testcases - Contains 3 sub-directories /milestone1 /milestone2 /milestone3
+        -> Public cases are named as public1.py public2.py etc..
+        -> If making other testcases please don't delete them. They can be used by others for reference.
+            -> Naming Convention - shs1.py, aks1.py, dev1.py etc..
+    -> README.md - Description of the project
+    -> .gitignore - Git's gitignore file (maybe used later)
+    -> .gitlab-ci.yml - Gitlab's .yml file (seems irrelevant)
+5) 
+     
+**Git Version Control Details**
+1) We need to add all our commits in the tag milestone1 already created on the repository.
+
+**Discussed Points**
+1) Symbol Table [Shashwat will tell] -> Comes in 2nd Milestone approximately
+2) 
+
+**Distribution of Work**
+1) ----- ---- --- ------

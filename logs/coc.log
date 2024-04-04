@@ -1,0 +1,28 @@
+################################### CODE OF CONDUCT ######################################
+
+1) Print statements
+    -> Are required for implementing the --verbose feature.
+    -> [lexer] [parser] -> To be annotated on every error statement.
+    -> Print all the errors at the topmost level by appending them in a string.
+2) Comments in the code
+    -> Every specification (code, flex, bison) has a way of writing Comments
+
+**Common Coding Practises to follow**
+    -> Related to Debugging of Code
+        -> Make a boolean to setup debug outputs
+            -> bool DEBUG_MODE = true;
+        -> Use capital lettered identifier for debug output
+            -> [LEXER], [PARSER], [OPTIMIZER], [GENERATOR] for all debug outputs
+    -> For definition section
+        -> The names of the defined regular patterns should be in lowercase english letters and may contain only underscore and digits apart from that.
+    -> Other rules
+        -> No use of "std::" in code. We will mention "using namespace std" at the top.
+        -> isPyFile in top section for checking extension of the program.
+        -> Use yylineno for counting lines no extra functions.
+    -> Usage of data structures
+        -> All data structures to be used will be pre-decided before starting work.
+        -> lexemeMap and lexemeCount is used for lexer.
+            -> map<string,string> lexemeMap;
+            -> map<string,int> lexemeCount;
+    -> Related to extra features to be implemented later on
+        -> Will formulate as and when needed.

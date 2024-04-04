@@ -1,0 +1,106 @@
+======================================================================
+"Basic Points"
+======================================================================
+"Points About lexer"
+    -> All unrecognized escape sequences are left in the string unchanged, i.e., the backslash is left in the result.
+        ==> What to be done in this case ? Nothing special done for now.
+    -> Rules related to octal and hex in escape characters are not covered in the implementation.
+        -> Some wierd rules given in the notes section.
+======================================================================
+"Points About Parser"
+    -> A few issues to talk about the Python 3.6 grammar
+        -> What about the other input patterns like the eval_input, simple_input and compound_input in the starting.
+======================================================================
+"Milestone 1 Final Points"
+    -> In case a "Lexical Error" is generated which is catched in "yylxr_error". Do we get the correct tokenisation till the first error?
+        -> As it shows an error it should have the offending token and the line number in it. Is that "true" ?
+        -> We are immediately exiting the program. Is it necessary to be done ?
+            -> Can we return some error flag like "Return 1" which is catched in the parser for a better decision?
+    -> Features to be implemented in our compiler are specifically detailed in milestone 1 PDF. Are the following implications correct ?
+        -> We will have only 8 types - int, float, string, boolean and 1D list of all these
+        -> 
+======================================================================
+"Points About AST Structure"
+    -> CRUX OF THE PROBLEM
+        -> It is decided by the top level what should be an operator and what should be an operand.
+        -> This actually needs to be hardcoded in the code.
+    -> Error cases for the generation of AST in the code -
+        -> Error in generating AST for public testcases - 
+            -> public1.py ==> Full AST not generated for the array.
+            -> 
+    -> What is an operator or operand in AST ?
+        -> <<EOF>> ? - Operand
+        -> Line 273 and 274 in parse.y code
+        -> Opening Bracket and Closing Bracket are operators ? -> Operators for now
+        -> Is COMMA a operator ? -> Operator for now
+        -> Do we need to consider newline in the parse tree and AST ? -> Is it an operator or operand ? -> Considered operand for now
+        -> Should RETURN be a operand ? -> I have considered as an operator
+        -> Should FROM and RAISE be operands ? -> Considered as operators
+        -> Is NONLOCAL an operator ? -> Considered an operator
+        -> Are INDENT and DEDENT operators ?
+        -> What is the case of NOT IN and IS NOT in comp_op productions ?
+        -> What is CARET in continued_and_expr ? -> Taken as an operator for now.
+        -> What is REM, AT, FLOOR_DIV, DIV and STAR in continued_factor ? -> Taken as operators for now.
+        -> What is AWAIT in atom_expr line 1212 -> Taken as an operator
+        -> Brackets are considered operators in atom line 1240 ??
+        -> Is CLASS an operator ? -> Taken as an operator for now.
+    -> Important Cases to discuss in processnodes function -
+        We will have a production of the form - A -> B C D E F G ... where A is a non-terminal and all the symbols in the RHS can either
+        be a terminal or a non-terminal. We are trying to make a node corresponding to this production recursively in this function which
+        forms the building block of the whole AST.
+        1) How are we ensuring that the first symbol B is a operand ? - Or is it not necessary
+        2) How are we ensuring that the production has the form - Operand Operator Operand Operator type schematic ?
+        3) Do we have operators of the type other than - Binary and Unary ?
+            a) How do we handle the operators other than Binary operators ?
+    -> 
+======================================================================
+"Points About Folder and File Structures"
+    -> What is the way of including the header files in the code so that we do not need to include the source .cpp file.
+======================================================================
+"Points About Symbol Table"
+======================================================================
+"Points About 3AC IR"
+======================================================================
+"Points About x86_64 Assembly Conversion"
+======================================================================
+"Archived Points"
+    -> As a result, in string literals, '\U' and '\u' escapes in raw strings are not treated specially.
+    -> Given that Python 2.xs raw unicode literals behave differently than Python 3.xs the 'ur' syntax is not supported.
+        ==> We are writing python 3.12 grammar so 'ur' is not supported.
+        ==> Check what should be done about this.
+    -> There are some special types of string and byte literals
+        -> Raw strings with 'r' and 'R'. Here '/' is treated in literal sense.
+            -> How to refer to this ? Can see some other points regarding '\u' and '\U' here as well.
+            -> Quotes can be excaped even in a raw string
+        -> Details about f-strings
+            -> Raw formatted strings are possible, but formatted bytes literals are not.
+    -> Understand the grammar in its entirity for the purpose of Milestone
+        -> Also, illegal charactars  and indentation main return 0 samajh nahin aa rha hai mujhe.
+        -> Also, integer, float, and other types par kuch action nahi kyu?
+    -> Are comments only of 1 type (i.e. starting from # only). Because the lexer rule for comment is only (#.*)
+    -> Some escape sequences are only recognised in the string literals as explained in the details.
+    -> What to do about encoding declarations ?
+        -> For now assumed that the source character set would be ASCII characters only.
+            ==> True for byte literals if starting from 'b' or 'B'. Bytes with higher numeric value must be escaped
+        -> For now assumed that there would be encoding declarations in the program. ==> But this means the encoding is UTF-8 ??
+        -> Milestone PDF says that Uniocode characters would not be used.
+        -> The encoding of a source file can be given by an encoding declaration and defaults to UTF-8, see PEP 3120 for details. If the source file cannot be decoded, a SyntaxError is raised.
+    -> Understand about git tags of github
+        ==> We have to add tags
+    -> Can we also escape a new line character ?? -> Yes, in multiline strings - This is supported
+    -> Some non-trivial literal features identified -> Not needed for our prototype
+        -> String Literal Concatenation
+        -> Details about the working of f-strings
+    -> Points clarified on piazza by professor -
+        -> Ignore soft keywords, del keyword, walrus (:=) operator, generator expressions, list comprehension, with statements, multiple assignments, slicing, multiple return
+        -> Inputs will use two spaces for indentation
+        -> Dunders are limited to __name__, __main__, and __init__
+        -> All input test cases will have an if __name__ == "__main__": bloc
+        -> All test cases will have a final newline
+    -> -> Why are we having "f" as prefix for normal string literals also ? They should mark f-strings only right ?
+        -> By the way f-strings feature is to be ignored
+    -> Check these in implementation -> Implemented in the compiler
+        -> Multiline strings - escaped newline
+    -> Why are debug outputs seperated into 2 categories, DEBUG and DEBUG 2 ??
+    -> Make some testcases which have some kind of error so that we can check our error handling utility.
+======================================================================

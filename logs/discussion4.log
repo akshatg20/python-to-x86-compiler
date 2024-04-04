@@ -1,0 +1,55 @@
+**Agenda for the Meeting**
+    -> Documentation of progress
+        -> As discussed in the first meet, progress will be documented regularly.
+            -> Link to overleaf (already shared in discussion1) - https://www.overleaf.com/8834421161wpzwyvqqjqqv#fe3096
+        -> Decide on the method and content to be documented.
+    -> Compile and test the merged lexer for finalisation
+        -> Discuss points in individual .log files or other doubtful points
+        -> Prepare 6 testcases atleast (2 from each atleast) which needs to be tested on the built lexer
+            -> Testing will be done based on the output like Assignment 1
+            -> Please focus on aspects related to your section of the lexer in the testcases you build for testing.
+        -> Please check any warnings or errors in your section of code
+            -> Compile the code present in "\src\scan.l" and see if some warning comes on the line which belongs to your part.
+    -> Decide the CFG (terminals, non-terminals, productions etc) for the parser to be build.
+        -> Reference - https://github.com/search?q=python%20compiler%20flex%20bison&type=repositories
+        -> Work distribution for the same.
+        -> Structural features of the code to be decided.
+            -> The major data structures to be used.
+            -> Execution flow of the program
+                -> More precisely, the top and bottom portions will be pre decided to avoid issues regarding code merges.
+
+**Discussed Points**
+1) Line Joiner inside a string literal should be ignored and deleted while processing the string.
+    -> Is it the job of the lexer or some later section ?
+2) We have assumed that encoding declaration will not be present in the program
+    -> The program will be in UTF-8.
+    -> Professor has given that Unicode Characters won't be present.
+3) How many hex digits are required in our program ??
+4) What is the significance of byte literals in a program ?
+
+**Other important points**
+1) Point to consider about Literals
+    -> Octal escapes with value larger than \o377 should produce a syntax warning.
+
+**Points for discussion in th next meeting regarding Grammar**
+1) What does this mean
+    -> In particular, & followed by a symbol, token or parenthesized group indicates a positive lookahead (i.e., is required to match but not consumed), while ! indicates a negative lookahead (i.e., is required not to match). We use the | separator to mean PEGs “ordered choice” (written as / in traditional PEG grammars)
+2) The given grammar is both PEG and EBNF grammar. How to convert it into a bison grammar.
+
+*Distribution of Work for Parser*
+** - Change your component of the grammar to equivalent bison grammar (LALR Bison Grammar)
+** - You should not change names of non-terminals and terminals unless and until it is highly necessary
+    -> The important changes that you did in your part of the grammar should be documneted in your .log file
+** - You should identify the rules in the grammar which are not required
+    -> Either decide that we won't pass a corresponding token from lexer for that rule
+    -> Or remove the rules from the grammar if it "significantly" simplifies the rules
+** - Decide the appropriate actions for all the rules in your part of the grammar
+    -> We should be able to provide appropriate error locations and appropriate error messages from the compiler.
+    -> If you are adding any more non-terminals or terminals then please write that in detail in your .log file.
+** - You have to figure out how to generate the DOT script for making the AST which is the final output.
+    -> Install GRAPHVIZ DOT on your system for generation of Syntax Tree
+** - Look at the complete grammar once to take an overview of the your part ad its relation with the other components of the grammar
+
+1) Akshat - Line 72 in grammar.txt to Line 151 in grammar.txt. Confirm the grammar rules correctness.
+2) Devansh - Mapping 3.12 grammar to 3.6 grammar. Feature details and other issues with lexer and language tokenization.
+3) Shashwat - Line 1 in grammar.txt to Line 71 in grammar.txt. Confirm the grammar rules correctness.

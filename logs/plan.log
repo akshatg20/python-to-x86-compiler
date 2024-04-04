@@ -1,0 +1,88 @@
+**MILESTONE 1**
+1) Things to read about
+    a) Study of Python grammar and lexical rules.
+    b) Graphviz tool required for the milestone named - dot.
+    c) What is STATICALLY TYPED (What are PEP-484 type hints related to Statically typed program).
+    d) -input -output -help and -verbose options of the python compiler. (What are they we need to implement them)
+    e) How to build "Makefile" in our project. We will need them to automate our project building and compilation.
+    f) Static polymorphism via overloading (WHAT IS THIS ?)
+    g) Deadline for this - ??? (Decide in meeting 1)
+2) Identification of Token Classes
+    a) The program will be STATICALLY TYPED SUBSET of actual python program
+    b) We need to get a graphical representation of the abstract syntax tree (AST)
+    c) Find good reference repositories and source code for python lexer.
+3) Analysis and Simplification of grammar
+    a) Remove the parts not required
+    b) Simplify the ambiguous portions
+4) Support is required for the following aspects
+    a) Primitive data types
+    b) 1-D Lists
+    c) Basic Arithmetic Operations
+    d) Control flow via if-elif-else
+    e) Support for recursion (THIS MAYBE NON-TRIVIAL)
+    f) Support for library function printf()
+    g) Support for classes and objects (THIS MAYBE NON-TRIVIAL)
+    h) Method and method calls (Functions)
+    i) Static polymorphism via overloading (WHAT IS THIS ?)
+    j) -input -output -help and -verbose options of the python compiler.
+4) Error Handling
+    a) Suitable error messages (I think line number and a simple error message is enough)
+    b) We can exit after the first error.
+4) Submission
+    a) Create testcases (5 to be sumitted with the milestone submission)
+    b) A PDF typesetted on Latex is required for our purpose.
+        i) Please join the overleaf project link for the same - https://www.overleaf.com/8834421161wpzwyvqqjqqv#fe3096
+        ii) We will document our progress after every significant progress
+        iii) We will typeset after every meeting
+    c) Create Tag after completing the code for this milestone
+        i) As soon as the code is complete we can make tags like milestone 1.1 -> milestone 1.2 etc..
+        ii) milestone 1 tag will be checked out by the TA
+
+5) Carried out aspects
+    a) Bison Version  - 3.8.1
+    b) -input -output -help and -verbose options of the python compiler. (What are they we need to implement them)
+    c) Static polymorphism via overloading (WHAT IS THIS ?)
+        -> We need to provide overloading
+        -> Do we need to provide overriding as well ??
+    d) Doubts on extra features
+        -> Encoding Declaration Implementation
+        -> How to implement implicit line joining
+            -> Shashwat says it should be thought about in the Parser
+        -> 
+
+==========================================================================================================================
+==========================================================================================================================
+**MILESTONE 2**
+1) Things to Ponder
+    a) What is the complete structure of the symbol table ?
+    b) What is the design of 3AC IR ?
+    c) What is the procedure for generation of 3AC IR of the compiler ?
+        -> Do we need to write some grammar ? Or how do we generate the code for 3AC IR ?
+    d) What are the changes we will have to do in the current parser in order to merge it in the current toolchain.
+    e) What grammatical additions are required for (a) Semantic Checking (b) Runtime Support and (c) Controlling and creation of Symbol table
+    f) What possible changes are required in the "main" of the compiler. How to ensure correctness ?
+2) Support is required for the following aspects
+    a) Primitive data types
+    b) 1-D Lists
+    c) Basic Arithmetic Operations
+    d) Control flow via if-elif-else
+    e) Support for recursion (THIS MAYBE NON-TRIVIAL)
+    f) Support for library function printf()
+    g) Support for classes and objects (THIS MAYBE NON-TRIVIAL)
+    h) Method and method calls (Functions)
+    i) Static polymorphism via overloading (WHAT IS THIS ?)
+3) Error Handling
+    a) Suitable error messages
+        ==> Details about error handling are provided in the PDF for milestone 2.
+        ==> We need to support atleast (a) Scope Checking (b) Type Checking and (c) Function Prototype Checking
+    b) We can exit after the first error.
+4) Creation of "3AC IR"
+    a) 
+5) Creation of "Symbol Table"
+    a) 
+6) Runtime Support in the Compiler
+    a) 
+
+==========================================================================================================================
+==========================================================================================================================
+**MILESTONE 3**

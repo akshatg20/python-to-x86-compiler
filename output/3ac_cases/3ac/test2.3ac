@@ -1,0 +1,75 @@
+goto main
+exit
+
+ParentClass.__init__:
+    beginfunc
+    t1 = popparam
+    return
+    endfunc
+
+ParentClass.parent_method:
+    beginfunc
+    t2 = popparam
+    t3 = "This is parent method"
+    param t3
+    stackpointer +xxx
+    call print, 1
+    stackpointer -yyy
+    return
+    endfunc
+
+ChildClass.__init__:
+    beginfunc
+    t4 = popparam
+    t5 = 1
+    param (t4+t5)
+    stackpointer +xxx
+    call ParentClass.__init__, 1
+    stackpointer -yyy
+    return
+    endfunc
+
+ChildClass.parent_method:
+    beginfunc
+    t6 = popparam
+    t7 = 1
+    param (t6+t7)
+    stackpointer +xxx
+    call ParentClass.parent_method, 1
+    stackpointer -yyy
+    return
+    endfunc
+
+ChildClass.child_method:
+    beginfunc
+    t8 = popparam
+    t9 = "This is child method"
+    param t9
+    stackpointer +xxx
+    call print, 1
+    stackpointer -yyy
+    return
+    endfunc
+
+main:
+    beginfunc
+    t10 = 2
+    param t10
+    stackpointer +xxx
+    call allocmem, 1
+    stackpointer -yyy
+    t11 = popparam
+    param t11
+    stackpointer +xxx
+    call ChildClass.__init__, 1
+    stackpointer -yyy
+    param t11
+    stackpointer + xxx
+    call ChildClass.child_method, 1
+    stackpointer -yyy
+    param t11
+    stackpointer + xxx
+    call ChildClass.parent_method, 1
+    stackpointer -yyy
+    return
+    endfunc

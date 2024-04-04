@@ -1,0 +1,49 @@
+**Agenda for the Meeting**
+    -> Check Bison version compatibility.
+        -> If we are not using very different versions then this would not be a problem.
+    -> Merge the parser's code and check other issues with the parser.
+        -> Indentation parsing - What is the structural change in the parser.
+        -> Issues related to error handling in parser
+            -> What kind of errors do we require to produce from the output.
+            -> Is it related to semantic checking needed to be done later on?
+        -> Other relvant issues with the tokenisation of the whole program.
+    -> Check for commonality of features in grammar 3.12 and 3.6
+        -> We are using - https://docs.python.org/3.6/reference/grammar.html
+        -> What are the extra PEP features in Python 3.12 grammar.
+        -> What do the EBNF and PEG mean in Python 3.12 grammar.
+    -> Border cases and extra functionalities testing through testcases.
+        -> Make testcases for testing purposes.
+        -> Think about various border cases in the work the lexer and parser.
+        -> Discussion of the .log files created by each of the team members.
+            -> Discuss all the doubts throughly. Try to test using a relevant testcase and plan the points for the next meeting.
+    -> Discussion on the Milestone 2 PDF which is already released on Canvas
+        -> From past experience we saw that if we do not allign things with what we need to possibly do in future then it causes problems.
+        -> First and most important work would be to find a good 3AC IR which we will use in our compiler.
+        -> If the 3AC IR is same then the last component of the project will be almost the same as the previously made components.
+        -> Also, is our current parser a good enough support for that 3AC IR ?
+            -> Important because we do not want to come back and change our lexer a lot.
+
+**Prologue - Devansh and Shashwat/Akshat**
+1) Error Handling in Lexer -
+	-> Allowed in assignment to leave after the first error.
+    -> Does the compiler termiate after the first error itself?
+        -> We can optionally continue the compilation after the first error.
+    -> We need to make the AST such that
+        -> The leaves of the AST should be labeled by the token names and the lexemes within parentheses, e.g., ID (myVarName)
+    -> Lexer and Parser Integration
+        -> 
+
+**Discussion in the meeting**
+1) An extra newline in the end of the input.
+2) Possible Discrepancies in the testcases
+    -> The testcases public1.py, public2.py
+
+**Piazza Forum Doubts**
+1) What are "Dunders" in Python 3.12 ?
+    -> Someone says they will be identified as NAME and semantic analyser will give them actual meaning.
+2) Problem with Soft Keywords in - We have to ignore soft Keywords -> What does that precisely mean ?
+3) Doubt @179 gives a possible difference in Python 3.12 and Python 3.6 grammars
+    -> The public testcase public1.py has some special features relevant to only Python 3.12 (Maybe)
+    -> We are supposed to add quotes to the PEP 484 type specifier list[int] which otherwise gives an error related to runtime exception.
+4) Doubt of features to be implemented
+    -> Global 

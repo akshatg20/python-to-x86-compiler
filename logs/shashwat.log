@@ -1,0 +1,33 @@
+
+> 
+Doubt?
+reserved names as identifiers? 
+How to handle rids
+
+
+> 
+Changed /r to newline
+
+
+
+"devansh.log"
+
+
+-> Also replaced openingbraces and closingbraces
+So will have to check the code of what is returned when we return in case of wrong closing bracket
+
+> BISON:
+        ==> It is available on - https://launchpad.net/bison/+download
+        ==> Compilation instructions available on - https://www.linuxfromscratch.org/lfs/view/development/chapter07/bison.html
+        ==> This works atleast correctly for linux. Check whether it works on MacOS.
+            -> You may need to add execute permissions for the program files which give error. Last step may require admin permissions.
+
+> Any important information from Piazza Forums.
+    -> Please take note of these - @106, @108
+
+> AST Brackets (thing)
+
+> AST flag
+
+> [SEP]
+

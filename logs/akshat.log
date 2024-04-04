@@ -1,0 +1,57 @@
+#################### MILESTONE2 ######################
+
+############ SYMBOL TABLES ###############
+
+Assumptions:
+
+1) The type of a variable will remain the same within a scope. [Mentioned in Piazza]
+
+2) I have assumed lists will be of primitive data types only.
+
+3) Symbol table not yet implemented for classes
+
+4) Not sure how to get the size of different variables
+
+5) All class attributes and members assumed to be public. [Mentioned in Piazza]
+
+6) string type will be given, extra variable to store column of declaration will be given
+
+---------------------------------------- "MILESTONE 2 WORK" ------------------------------------------------
+1) Read Slide 9 - Runtime Environments from CS335 Course Webpage.
+    a) You will have to read about x86 assembly and calling conventions - Given in milestone 2 PDF
+    b) In this milestone we have to implement the "Activation Records" only and rest of the x86 code generation is in Mileston 3
+        -> "Activation Records" record the state of the program execution - Program Counter, Machine Registers and Procedure Calls.
+        -> Create a structure or class for "Activation Records" - as per milestone 2 requirements.
+        -> Create generic helper functions to maintain program virtual memory and execution state where all code and variables will be stored
+            -> It is somewhat like a "Symbol Table" just that you would need to study about machine specific conventions in x86.
+            -> This virtual program memory will be managed by compiler.
+            -> This should be independent of the rest of the components of the compiler (especially 3AC IR).
+                -> Please do tell if you need support from other pieces of the project.
+    c) Think of a roadmap for what all we have to implement for "runtime support" in milestone 2.
+        -> Will discuss this in the next meeting.
+    d) Write your code in "gen_x86.cpp" and write any structure or classes in "gen_x86.hpp"
+        **-> You can get some help from "gen_x86.hpp" in "milestone 4" given by Shashwat earlier.
+        -> The "x86" code should run via GAS on Linux (at the end of Milestone 3) - I don't know whether it makes any difference or not.
+2) Correction of testcases we are using for "Milestone 2" checking -
+    a) All testcases are present in testcases/ directory
+        -> Please see and update them to make them statically typed.
+        -> None of them should use any prohibited feature based on "Milestone 1 PDF"
+    b) Add any extra testcases that you would like us to consider in "Milestone 2"
+    c) We will spend the last day before submission checking our implementation for correctness using these cases.
+3) ("Not ready now - Will inform when this work is ready")
+Some more functionality is required in symbol table. That will be added in "symbol_table.hpp" with comments -
+    a) You need to provide function definitions for these functions.
+        -> Please do not add extra internal helper functions in "symbol_table.hpp" file. Header should only have functions which will be called from outside of the symbol_table.
+    b) Some more functionalities may be added as we progress.
+
+
+
+------------------------------------------------ "DOUBTS IN MILESTONE 2" --------------------------------------------
+
+1) How to manage function calls with default values of parameters?
+
+2) Can classes have same name in inherited scoopes?
+
+3) Starting portion of 3AC generating too many "goto end".
+
+4) In "continued_file_input.2", do we need to create a new label?

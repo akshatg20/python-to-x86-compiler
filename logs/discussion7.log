@@ -1,0 +1,93 @@
+**Agenda for the Meeting**
+    -> Go through the plan and work to be done for Milestone 2.
+        -> Study the previous year submissions.
+        -> Discuss a few examples about the 3AC IR.
+        -> Based on that decide the structure of the Symbol Table of the compiler.
+        -> 
+    -> Work distribution and checking for the ordering of work to be done in Milestone 2.
+    -> Discussion of important points related to Milestone 1 that we may want to discuss.
+        -> Small changes done in /doc/milestone1 -> A typo - "kanput" changed to "kanpur"
+        -> What is Implicit Line Joining in Python ?
+        -> [FOR AKSHAT] There was no error in the README. The initial command would be ./src only
+        -> No support for Classes and Objects in AST ?? - Check this
+            ==> A submitted test case named "test4.py" has this peculiarity included in it.
+        -> Discuss about version conflicts.
+            ==> Every one should have same versions for critical softwares. See the NOTES section.
+    -> Other issues
+        -> What to do about features that we do not require to implement ?
+            ?? -> These features give an error when they are found in the source code.
+            ?? -> We do not think about those cases.
+            ?? -> They are supported if resonable to extend from the current implementation.
+            ?? -> We do not give an error but we also do not ensure correctness in those cases for the compilation.
+
+**Discussed Points in the Meeting**
+    -> Work Distribution for Milestone 2
+        -> 
+
+
+**About Version Conflicts**
+IMPORTANT: g++ versions conflicts maybe serious at various places.
+1) flex 2.6.4 [sir recommends]
+2) bison 3.8.1 [sir recommends]
+3) g++ 9.3.0 [ye mera version hai - ispe discuss kr sktey hein]
+4) C and C++11 Mac warning on compilation.
+5) Command line argument 
+---------------------------------------------------------------
+Bison 3.8.1
+https://launchpad.net/bison/+download
+https://www.linuxfromscratch.org/lfs/view/development/chapter07/bison.html
+[Second link commands also works for 3.8.1 zip file]
+---------------------------------------------------------------
+
+
+**NOTES**
+As we use newer versions of g++ compiler some C features start gets deprecated. For more details you can read specific C++ features in book series by Scott Meyers especially the book "More Effective C++". Some deprecation examples are as below -
+
+1) Structure initialization is not complete using ```malloc()``` and ```free()``` in C++ because we require to call the type class constructors also after memory allocation so ```new``` and ```delete``` is required. The below code runs on g++ 4.2 but not on g++ 9.3.
+[Source: Milestone 1 Debugging]
+```
+#include<bits/stdc++.h>
+using namespace std;
+
+struct checking {
+    stack<int> stk;
+    int num;
+    checking() : num(0) {} // Constructor to initialize num
+};
+
+struct checking *state = NULL;
+
+void solve() {
+    state = (struct checking*) malloc(sizeof(struct checking));
+    if (state == NULL) {
+        cout<<"Memory Allocation Error\n";
+        return;
+    }
+    state->num = 1;
+    (state->stk).push(1);
+    return;
+}
+
+int32_t main() {
+    cout << "Compiler version: ";
+    cout << __GNUC__ << "." << __GNUC_MINOR__ << std::endl;
+    int t=1;
+    for(int i=1;i<=t;i++) {
+        // cout<<"Case #"<<i<<": ";
+        solve();
+    }
+    cerr<<"Time:"<<1000*((double)clock())/(double)CLOCKS_PER_SEC<<"ms\n";
+    return 0;
+}
+
+```
+
+2) The below line of code does not work on g++ 15 but works good on versions like g++ 9.3.0.
+[Source: Assignment 1 Submission]
+```
+#include <algorithm>
+
+transform(small_lexeme.begin(), small_lexeme.end(), small_lexeme.begin(), [] (unsigned char c) {
+    return tolower(c);
+});
+```

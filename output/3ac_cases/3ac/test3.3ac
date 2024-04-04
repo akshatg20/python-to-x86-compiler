@@ -1,0 +1,49 @@
+# "symtable" is a function which will be implemented during code generation with help of Symbol Table. It provides the offset of the variable in a function or user defined type like a class.
+---------------------------------------------------------------------------------------------------------------------------------
+
+goto main
+exit
+
+MyClass.__init__:
+    beginfunc
+    t1 = popparam
+    t2 = symtable(MyClass, name)
+    t3 = popparam
+    *(t1+t2) = t3
+    return
+    endfunc
+
+MyClass.greet:
+    beginfunc
+    t4 = popparam
+    t5 = "Hello,"
+    t6 = symtable(MyClass, name)
+    t7 = *(t4+t6)
+    
+    param t5
+    stackpointer +xxx
+    call print, 1
+    stackpointer -yyy
+    return
+    endfunc
+
+main:
+    beginfunc
+    t1 = 50
+    param t1
+    stackpointer +xxx
+    call allocmem, 1
+    stackpointer -yyy
+    t2 = popparam
+    t3 = "Alice"
+    param t2
+    param t3
+    stackpointer +xxx
+    call MyClass.__init__, 2
+    stackpointer -yyy
+    param t2
+    stackpointer + xxx
+    call MyClass.greet, 1
+    stackpointer -yyy
+    return
+    endfunc

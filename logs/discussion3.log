@@ -1,0 +1,110 @@
+**Agenda for the meeting**
+1) Technical Aspects carried from previous meeting
+    -> Bison Version - 3.5.1 (Sir has given manual and hinted towards using 3.8.1 Bison).
+    -> Please keep filling the .gitignore file to include the un-necessary files.
+2) **Merge work decided in previous meeting**
+    -> Debug any errors in the combined lexer
+    -> Any extra external features implemented ?
+        -> Options like --help, --verbose, --input, --output
+        -> Checking of file extensions
+    -> What kind of output are we getting ?
+        -> Planned for output like Assignment 1 for now
+3) Discussion for work done till now
+    -> What are the major border logical issues
+    -> What are the major implementation issues
+    -> What are the features left to be implemented
+        -> Because they are not fully controlled by any one of our parts logic
+        -> Any other reason
+4) What is to be completed till the next meeting (15th February 2024)
+    -> As Assignment 2 deadline is 14th so we will divide work for parser on 15th
+    -> We will then meet after midsem (24th February 2024 22:00 IST)
+
+**Discussed Points**
+1) 3AC IR repos and Good repositories for python parser to be found
+    -> They should be based on Bison 3.8.1
+
+**Common Coding Practises to follow**
+    -> Related to Debugging of Code
+        -> Make a boolean to setup debug outputs
+            -> bool DEBUG_MODE = true;
+        -> Use capital lettered identifier for debug output
+            -> [LEXER], [PARSER], [OPTIMIZER], [GENERATOR] for all debug outputs
+    -> For definition section
+        -> The names of the defined regular patterns should be in lowercase english letters and may contain only underscore and digits apart from that.
+    -> Other rules
+        -> No use of "std::" in code. We will mention "using namespace std" at the top.
+        -> isPyFile in top section for checking extension of the program.
+        -> Use yylineno for counting lines no extra functions.
+    -> Usage of data structures
+        -> All data structures to be used will be pre-decided before starting work.
+        -> lexemeMap and lexemeCount is used for lexer.
+            -> map<string,string> lexemeMap;
+            -> map<string,int> lexemeCount;
+    -> Related to extra features to be implemented later on
+        -> Will formulate as and when needed.
+
+**Changes done in code while merging**
+    -> "Shashwat"
+        -> You can copy these changes in your respective .l files if you want.
+        -> Removed explicit mention to yywrap() function in the bottom section. We are using "%option noyywrap" in definitions.
+        -> Deleted extra functions "incrementline" for counting line number as we are using "%option yylineno".
+        -> Defined a variable bool DEBUG_MODE; in top section and print some debug outputs if this flag is true.
+            -> This is to be done for latter parts of the compiler project as well.
+        -> Please check what is the issue with the reserved id class "rid__" defined by you which gives warnings while compilation.
+        -> What is the function of "getlowercase" function in your code ? Seems that it is never called.
+        -> It may be required to understand the states "<INSIDE_BRACKET>" and "<INDENTATION_TEST>" in more detail
+            -> Please check if any changes are required in the rules for identifiers due to different states in lexer.
+        -> Names for data structures used for storing the lexemes and tokens is present in "\src\scan.l". You can see the "Common Coding Practises" section below. We will follow similar names later on as well.
+        -> You have a comment in your code - /* doubts with the following - place _ in softkeywords OR rid__ */
+            -> Please discuss in the next meeting.
+    -> "Akshat"
+        -> You can copy these changes in your respective .l files if you want.
+        -> Patterns in definitions section changed to lowercase english characters.
+        -> No need to use [LEXER ERROR] message in the output okay to work with only [LEXER]
+            -> Just because others are using only [LEXER].
+    -> "Devansh"
+        -> You can copy these changes in your respective .l files if you want.
+        -> Defined a variable bool DEBUG_MODE; in top section and print some debug outputs if this flag is true.
+            -> This is to be done for latter parts of the compiler project as well.
+        -> It may be required to understand the states "<INSIDE_BRACKET>" and "<INDENTATION_TEST>" in more detail
+            -> Please check if any changes are required in the rules for literals due to different states in lexer code.
+        -> All data structures for maintaining tokens were deleted as we will use common data structures.
+    -> "Leftout Points"
+        -> The "counter" utility build by Shashwat is not extended to all tokens of the lexer. Decide whether that is to be done or not.
+            -> The extra data structures "mp" and "mp2" are also kept in code for now supporting "counter". They should be removed or properly named as per "Common Coding practises".
+            -> Same for the "addinvalid" and "getlowercase" utility.
+        -> Completion of any leftout rules that may be left due to duplication of rules while managing states in code of lexer.
+        -> Code formatting is not done - Will be done after final changes in discussion 4.
+
+**Important Queries for discussion**
+    -> What does %option noyywrap does ?
+    -> Ambiguity related to "rid__" rules
+        -> Why is rid__ rule not matched ever ?
+    -> Ordering of Lexical Rules
+        -> The reserved keywords are to be kept on top ==> Is this correct ??
+        -> Ordering for different rules in Indirect Bracket state
+        -> Any other issues that can happen due to ordering of rules in final lexer [major point to discuss in discussion4].
+
+**Other important points**
+    -> Download, install and setup Bison version 3.8.1
+        -> Link to official webpage - https://www.gnu.org/software/bison/manual/bison.html
+        -> This is the latest version and if not possible to install on all systems (Mac OS and Linux Ubuntu 20.04 LTS) then we will have to stick to a common version for now.
+
+**Agenda for the NEXT Meeting**
+    -> Documentation of progress
+        -> As discussed in the first meet, progress will be documented regularly.
+            -> Link to overleaf (already shared in discussion1) - https://www.overleaf.com/8834421161wpzwyvqqjqqv#fe3096
+        -> Decide on the method and content to be documented.
+    -> Compile and test the merged lexer for finalisation
+        -> Prepare 6 testcases atleast (2 from each atleast) which needs to be tested on the built lexer
+            -> Testing will be done based on the output like Assignment 1
+            -> Please focus on aspects related to your section of the lexer in the testcases you build for testing.
+        -> Please check any warnings or errors in your section of code
+            -> Compile the code present in "\src\scan.l" and see if some warning comes on the line which belongs to your part.
+    -> Decide the CFG (terminals, non-terminals, productions etc) for the parser to be build.
+        -> Reference - https://github.com/search?q=python%20compiler%20flex%20bison&type=repositories
+        -> Work distribution for the same.
+        -> Structural features of the code to be decided.
+            -> The major data structures to be used.
+            -> Execution flow of the program
+                -> More precisely, the top and bottom portions will be pre decided to avoid issues regarding code merges.

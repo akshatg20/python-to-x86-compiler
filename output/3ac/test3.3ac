@@ -1,0 +1,13 @@
+goto L2
+goto L1
+goto L2
+t2 = ==
+goto 
+L4
+goto exit
+L6
+goto exit
+goto L1
+goto L2
+goto exit
+exit:

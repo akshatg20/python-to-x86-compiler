@@ -4,7 +4,7 @@ This is the repository to store source code for python compilation toolchain bui
 
 For building this repository follow these steps
 ```
-cd ./src                                       # Go the the source code directory
+cd ../src                                      # Go the the source code directory
 make all                                       # Run the Makefile to compile the toolchain
 ./cs335 --help                                 # Get information about the functioning of the compiler
 ./cs335 --input <path to input file>           # Check compilation of .py input file.
@@ -24,17 +24,6 @@ For more specific output you can also run the following commands
 ./cs335 --input <path to input file> --dot <path to store dot script>
 ./cs335 --input <path to input file> --ast <path to store pdf file for AST>
 ./cs335 --input <path to input file> --dot <path to store dot script> --ast <path to store pdf file for AST>
-```
-
-Instructions to Run Testcases
-```
-# Run simpler testcases specially for AST correctness check
-cd ../testcases/ast_testcases
-bash run_ast_tests.sh
-
-# Run main testcases
-cd ../testcases
-bash run_tests.sh
 ```
 
 Group Number - 10
