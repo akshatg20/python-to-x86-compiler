@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <map>
+#include <deque>
 using namespace std;
 
 // TYPE TOKENS ARE MODIFIED HERE
@@ -56,6 +57,9 @@ using namespace std;
 
 // All classes and structures that you want to declare should go here.
 
+// forward definition required
+class SymbolTable;
+
 // TYPE EXPRESSIONS ARE DETAILED IN Pg 371 of DRAG BOOK - IT IS IMPLEMENTED HERE
 class TypeExpression {
 public:
@@ -66,6 +70,7 @@ public:
         int type;
         int space; // How much space in bytes will the Type denoted by a TypeExpression consume
         string encode; // String encoding of the type - Like int[2][3] == Array(2,Array(3,Integer)) -> Don't know whether it is useful
+        string mangle; // This is used for name mangling in function overloading for x86 generation
         string name; // Important in case of user_defined types. If a type is user_defined then the name of the type is given here.
         // The lexeme whose type this TypeExpression denotes is stored as a pointer.
         // This points inside Symbol Table entry where lexeme is stored. This is specifically used for string type.
@@ -83,10 +88,10 @@ public:
         TypeExpression* domain;
         TypeExpression* range;
         // Storage defined for TYPE_RECORD and EMPTY for other
-        vector<TypeExpression*> fields;
+        deque<TypeExpression*> fields;
         // In case if this RECORD represent a CLASS then the variable class_flag will be 1.
         // All types from which this type inherits will be stored in this vector.
-        vector<TypeExpression*> inheritance;
+        deque<TypeExpression*> inheritance;
         // In case of the particular identifier being of some user defined type the pointer to the TypeExpression of that
         // type will be stored within the TypeExpression. This will require support from Symbol Table.
         TypeExpression* user_defined;
@@ -109,10 +114,10 @@ public:
         TypeExpression(
             int type,
             int number = -1,
-            vector<TypeExpression*> fields = vector<TypeExpression*>(),
+            deque<TypeExpression*> fields = deque<TypeExpression*>(),
             int size = 0,
             int flag = 0,
-            vector<TypeExpression*> inheritance = vector<TypeExpression*>()
+            deque<TypeExpression*> inheritance = deque<TypeExpression*>()
         );
 
         // Checks whether the passed type is same as the type denoted by the object of this class.
@@ -151,15 +156,27 @@ struct Param {
 };
 typedef struct Param Param;
 
+// Holds information useful during function calls
+struct ActivationRecord {
+  int stackMemAlloc;                    // stores the amount of bytes to be allocated on the stack for the function  
+  vector<int> params;                   // offsets of integer/pointer parameters
+  int returnAddr;                       // address to which function returns to
+  int prevStackPointer;                 // previous address of the stack pointer
+  unordered_map<string,int> savedVars;  // variables saved from caller, integer
+  unordered_map<string,int> tempVars;   // offsets of temp values used during the function call, integer
+  int numParams;                        // number of parameters
+  int numVars;                          // number of local variables
+  int sizeVars;                         // size occupied by local variables
+  int sizeParams;                       // size occupied by parameters
+};
+typedef struct ActivationRecord ActivationRecord;
+
 // Symbol table entry class
 class STentry {
 public:
     TypeExpression* symbol_type;                    // for example, int , float, class etc.
     int scope_level;                                // specifies the scope of the current entry
-    
-    // Every STentry in all Symbol Table's in the Symbol Table Tree will have an integer "offset" which corresponds to the relative address of the symbol whose information is stored by this STentry.
     int offset;                                     // offset of the symbol from the function declaration
-    
     vector<int> refPoints;                          // stores the line nos where the symbol was used
     PDT var;                                        // primitive data type variable value                                    
     vector<Param> funcParams;                       // parameters in case of a function
@@ -167,6 +184,7 @@ public:
     string token;                                   // for example, NUMBER, STRING, NAME ...
     char* srcfilepath;                              // source file info
     int column;                                     // column no of the entry
+    SymbolTable* tablePtr;                          // points to the symbol table for functions/classes
 
     // Default Constructor
     STentry();
@@ -187,6 +205,7 @@ public:
     SymbolTable* parent;                             // parent of current node 
     int type;                                        // type of symbol table
     string name;                                     // name of symbol table
+    ActivationRecord* funcRecord;                    // holds important information for function calls
 
     // Default Constructor
     SymbolTable();
@@ -226,38 +245,11 @@ public:
 // In case of any error return -1 and fill SemanticError appropriately. Otherwise return 0.
 int compute_offsets(SymbolTable* table, int offset);
 
-// Whenever a new entry is to be added to the current symbol table - This function is called.
-// Please take the source file path from "extern char* inputfile_path" which is defined in "main.cpp" -> And store in SymbolTable
-// The "lexeme" stores the complete declared NAME and should be added appropriately in a STentry.
-// FEATURES TO SUPPORT -
-// Function Overloading - If added entry is a function with same "lexeme" but different type then it is allowed.
-//                        In such cases the passed type T will be helpful to check whether the function can be added.
-// Function Overriding - NOT IMPLEMENTED => Do we have to implement this ?
-// Class Inheritance - If added "lexeme" is a class then it can inherit from a parent.
-//                     In such cases vector<TypeExpression*> inherit in T can be useful.
-// Variable Overloading - Is not allowed. In such cases the variable defined later will take over.
-//                        The previous declaration of the same "lexeme" will be deleted from Symbol Table of current scope.
-// Class Overloading - Is also not allowed and will be treated like variable overloading only.
-// Variable Overloading will generate warning - Please update the value of flag to 1 in this case. Fill SemanticError appropriately.
-// Class Overloading will generate warning - Please update the value of flag to 2 in this case. Fill SemanticError appropriately.
-// In case of no error return the pointer to symbol table entry generated and keep value of flag as 0.
-// In case of any error return NULL and fill SemanticError appropriately. In this case value of flag is irrelevant.
-STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag);
-
 // Inline "add" function to be finally used in "parse.y"
 // This function is made because the TypeExpression needs to store a pointer to the lexeme it points to
 // But this pointer can be available only after adding the lexeme to Symbol Table. So, "lexeme" field
 // of TypeExpression is changed after adding the entry to Symbol Table.
-inline STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag) {
-    STentry* entry = ST_add(lexeme, token, T, lineno, column, flag);
-    T->lexeme = (&(entry->lexeme));
-    if(entry != NULL) {
-        cout << "Symbol table entry is added which is NOT NULL" << "\n";
-        cout << "Entry is for " << lexeme << "\n";
-    }
-    else cout << "Symbol table entry is added which is NULL" << "\n";
-    return entry;
-}
+STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table = NULL);
 
 // LOOKUP NEEDS TO SUPPORT FUNCTION OVERLOADING AND OVERRIDING SO FUNCTIONALITY IS APPENDED WITH TYPE KEY
 // function to lookup entry in the symbol table
@@ -267,12 +259,12 @@ inline STentry* add(string lexeme, string token, TypeExpression* T, int lineno, 
 // In case of no error return the pointer to symbol table entry for this lexeme.
 // In case of any error (like lookup not successful) return NULL and fill SemanticError appropriately.
 STentry* lookup(string lexeme, TypeExpression* T = NULL);
-
+STentry* lookup_restricted(string lexeme, TypeExpression* T = NULL);
 
 // function to increment the scope level and create a new symbol table for the new scope
-void incr_scope(int scope_flag, string lexeme, TypeExpression* T = NULL);
+int incr_scope(int scope_flag, string lexeme, TypeExpression* T = NULL);
 // function to decrement the scope level
-void decr_scope();
+int decr_scope();
 
 
 // Given pointer to a TypeExpression the Symbol Table should return a UNIQUE TYPE NUMBER for the user defined type T.
@@ -295,6 +287,9 @@ int type_scope_check(TypeExpression* T);
 // THIS FUNCTION WILL REQUIRE MODIFICATION BASED ON NEW SYMBOL TABLE STRUCTURE
 // function to print all symbol tables, should be called with the globalST
 void dumpAllSTs(string DirPath, SymbolTable* currTable);
+
+// function to fill activation records for all functions
+int fillActivationRecords(SymbolTable* table);
 
 // BELOW ARE THE FUNCTIONS WHICH ARE TO BE IMPLEMENTED AS PART OF THE TYPE SYSTEM
 
@@ -321,9 +316,9 @@ TypeExpression* type_user_defined(int type);                                   /
 // "record" type constructor - flag will be set to 0 if it is a normal record
 // For classes - flag = 1 and inherit will be passed
 TypeExpression* type_record(
-    vector<TypeExpression*> fields,
+    deque<TypeExpression*> fields,
     int flag = 0,
-    vector<TypeExpression*> inherit = vector<TypeExpression*>()
+    deque<TypeExpression*> inherit = deque<TypeExpression*>()
 );
 
 /*********************************** FUNCTION DECLARATIONS ********************************************************/

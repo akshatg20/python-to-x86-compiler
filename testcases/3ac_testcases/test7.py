@@ -9,12 +9,10 @@ class MyClass:
         print("Instance variable:", self.instance_variable)
         print("Static variable:", MyClass.static_variable)
 
-    @staticmethod
     def static_method():
         print("This is a static method")
         print("Static variable:", MyClass.static_variable)
 
-    @staticmethod
     def iterate_range(start, stop, step=1):
         for i in range(start, stop, step):
             print(i)

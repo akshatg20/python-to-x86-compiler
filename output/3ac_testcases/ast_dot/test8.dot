@@ -1,0 +1,9 @@
+Graph {
+node1 [label="continued_file_input ()"];
+node2 [label="NAME (print)"];
+node3 [label="trailers (&quot;Hellow World&quot;)"];
+
+node1 -- node2;
+node1 -- node3;
+
+}

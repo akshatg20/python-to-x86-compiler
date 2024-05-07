@@ -104,3 +104,21 @@
     -> Why are debug outputs seperated into 2 categories, DEBUG and DEBUG 2 ??
     -> Make some testcases which have some kind of error so that we can check our error handling utility.
 ======================================================================
+
+
+// Scope PROBLEM
+// Register Allocation standard Allocation
+// 
+// 
+// LATER WORK - Instruction Ordering
+
+
+// Register Allocation
+// 0) Se that registers are to be used for which task (heuristics)
+// 1) Keep note of the used registers and also the variables they are storing.
+// 2) In case of collision (where it is not possible to allocate a register without freeing one)
+//      -> Fix a register allocation and deallocation scheme
+//      -> Code generation for the case of spilling of registers and allocation of new ones.
+// 3) Implement a function -
+//      - update() => To inform allocation algorithm that all local variables should be copied on stack (especially when a function is called)
+//      - flush() => When a function block finishes - Information about local variables in no more useful so remove them

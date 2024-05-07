@@ -1,0 +1,57 @@
+_Z4mainv:
+.LFB0:
+    beginfunc
+    x = 10
+    i = 0
+.L0:
+    $t1 = x + 1
+    ifFalse i < $t1 goto .L3
+    val = 1
+    j = 0
+.L1:
+    ifFalse j < i goto .L2
+    $t2 = j + 1
+    val = val * $t2
+    j = j + 1
+    goto .L1
+.L2:
+    $t3 = "Value of factorial of "
+    param $t3
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t4 = i
+    param $t4
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t5 = " is equal to "
+    param $t5
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t6 = val
+    param $t6
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t7 = "\n"
+    param $t7
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    i = i + 1
+    goto .L0
+.L3:
+    return
+    endfunc
+
+main:
+
+.LFB1:
+    beginfunc
+    stackpointer +xxx
+        call _Z4mainv, 0
+    stackpointer -yyy
+    return
+    endfunc

@@ -1,0 +1,32 @@
+_Z4mainv:
+.LFB0:
+	beginfunc
+	$t4 = x * y
+	x = x
+	ifFalse x goto .L1
+.L0:
+	$t1 = "Hello"
+	param $t1
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+.L1:
+.L2:
+	return
+	endfunc
+	
+main:
+.LFB1:
+	beginfunc
+	goto .L3
+.L3::
+.L4:
+	stackpointer +xxx
+		call main,0
+	stackpointer -yyy
+.L5:
+.L6:
+	return
+	endfunc
+	
+

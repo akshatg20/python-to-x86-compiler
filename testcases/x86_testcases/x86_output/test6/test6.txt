@@ -1,0 +1,120 @@
+_Z13calculate_sumiiiiiii:
+.LFB0:
+    beginfunc
+    a = popparam
+    b = popparam
+    $t15 = a + b
+    c = popparam
+    $t16 = $t15 + c
+    d = popparam
+    $t17 = $t16 + d
+    e = popparam
+    $t18 = $t17 + e
+    f = popparam
+    $t19 = $t18 + f
+    g = popparam
+    $t20 = $t19 + g
+    paramret $t20
+    return    
+    endfunc
+
+_Z4mainv:
+.LFB1:
+    beginfunc
+    array = [ 1 , 2 , 3 , 4 , 5 , 6 , 7 ]
+    $t1 = "The value of 3rd number in array is: "
+    param $t1
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t2 = array[2]
+    param $t2
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t3 = "\n"
+    param $t3
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    array[2] = 10
+    $t4 = "New value of 3rd number in array is: "
+    param $t4
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t5 = array[2]
+    param $t5
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t6 = "\n"
+    param $t6
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    param 6
+    param 5
+    param 4
+    param 3
+    param 2
+    param 1
+    param 0
+    stackpointer +xxx
+        call _Z13calculate_sumiiiiiii,7
+    stackpointer -yyy
+    $t7 = popparam
+    sum_fixed = $t7
+    $t8 = "Sum of first 7 whole numbers is: "
+    param $t8
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t9 = sum_fixed
+    param $t9
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t10 = "\n"
+    param $t10
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    param array[6]
+    param array[5]
+    param array[4]
+    param array[3]
+    param array[2]
+    param array[1]
+    param array[0]
+    stackpointer +xxx
+        call _Z13calculate_sumiiiiiii,7
+    stackpointer -yyy
+    $t11 = popparam
+    sum = $t11
+    $t12 = "Sum of array is: "
+    param $t12
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t13 = sum_fixed
+    param $t13
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t14 = "\n"
+    param $t14
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    return
+    endfunc
+
+main:
+.LFB2:
+    beginfunc
+    stackpointer +xxx
+        call _Z4mainv,0
+    stackpointer -yyy
+    return
+    endfunc

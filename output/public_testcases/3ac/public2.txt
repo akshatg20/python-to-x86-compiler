@@ -1,0 +1,108 @@
+_Z11compute_minv:
+.LFB0:
+	beginfunc
+	min_value = None
+	i = 0
+	$t5 = data
+goto .L0:
+.L0:
+	$t7 = $t5 < len(data)
+ifFalse $t7 goto .L1:
+	$t3 =  ! min_value
+ifFalse $t3 goto .L3:
+.L2:
+	min_value = data[i]
+	min_value = min_value
+	goto .L0
+.L3:
+.L5:
+	$t4 = data[i] < min_value
+.L6:
+	min_value = data[i]
+	min_value = min_value
+.L4:
+	goto .L0
+	$t6=$t5 + 1)
+	$t5 = $t6
+	goto .L0
+.L1:
+	paramret min_value
+	return
+	endfunc
+	
+_Z11compute_avgv:
+.LFB1:
+	beginfunc
+	avg_value = None
+	sum = 0
+	i = 0
+	$t10 = data
+goto .L8:
+.L8:
+	$t12 = $t10 < len(data)
+ifFalse $t12 goto .L9:
+	$t8 = sum + data[i]
+	sum = $t8
+	$t11=$t10 + 1)
+	$t10 = $t11
+	goto .L8
+.L9:
+	$t13 = sum / len(data)
+	paramret $t13
+	return
+	endfunc
+	
+_Z4mainv:
+.LFB2:
+	beginfunc
+	stackpointer +xxx
+		call compute_min,0
+	stackpointer -yyy
+	min_value = compute_min
+	$t14 = "Minimum value: "
+	param $t14
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param min_value
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	stackpointer +xxx
+		call compute_avg,0
+	stackpointer -yyy
+	avg_value = compute_avg
+	$t15 = "Average value: "
+	param $t15
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param avg_value
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	return
+	endfunc
+	
+main:
+.LFB3:
+	beginfunc
+	$t1 = -2.3
+	$t2 = -9.1
+	data = [$t1, 3.14, 0.9, 11, $t2]
+goto .L7:
+.L7:
+goto .L10:
+.L10:
+goto .L11:
+.L11::
+.L12:
+	stackpointer +xxx
+		call main,0
+	stackpointer -yyy
+.L13:
+.L14:
+	return
+	endfunc
+	
+

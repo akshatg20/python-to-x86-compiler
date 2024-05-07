@@ -2,7 +2,7 @@
 CC = g++ -std=c++11
 
 # Compiler flags
-CFLAGS_MAC = -Wno-deprecated -g
+CFLAGS_MAC = -Wno-deprecated
 CFLAGS =
 
 # Source files

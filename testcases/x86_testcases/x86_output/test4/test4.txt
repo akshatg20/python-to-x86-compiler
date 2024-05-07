@@ -1,0 +1,80 @@
+_Z9array_sumPii:
+.LFB0:
+    beginfunc
+    array = popparam
+    size = popparam
+    sum = 0
+    i = 0
+.L2:
+    ifFalse i < size goto .L3
+    $t9 = array[i]
+    sum = sum + $t9
+    i = i + 1
+    goto .L2
+.L3:
+    paramret sum
+    return    
+    endfunc
+
+_Z4mainv:
+.LFB1:
+    beginfunc
+    array = [ 1 , 2 , 3 , 4 , 5 , 20 , -4 , 5 ]
+    length = 8
+    param length
+    param array
+    stackpointer +xxx
+        call _Z9array_sumPii,2
+    stackpointer -yyy
+    $t1 = popparam
+    sum = $t1
+    $t2 = "The array is given by"
+    param $t2
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t3 = "\n"
+    param $t3
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    i = 0
+.L0:
+    ifFalse i < length goto .L1
+    $t4 = array[i]
+    param $t4
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    param $t3
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    i = i + 1
+    goto .L0
+.L1:
+    $t5 = "The sum of array elements is "
+    param $t5
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    $t6 = sum
+    param $t6
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    param $t3
+    stackpointer +xxx
+        call print,1
+    stackpointer -yyy
+    return
+    endfunc
+
+main:
+.LFB2:
+    beginfunc
+    stackpointer +xxx
+        call _Z4mainv,0
+    stackpointer -yyy
+    return
+    endfunc

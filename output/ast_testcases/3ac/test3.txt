@@ -1,0 +1,6 @@
+goto 
+t2 = 
+goto L2
+L2
+goto exit
+exit:

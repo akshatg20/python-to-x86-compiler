@@ -1,0 +1,61 @@
+_CZ22MathOperation.__init__PMathOperationv:
+.LFB0:
+	beginfunc
+	self = popparam
+	self.lifespan = 0
+	self.lifespan = self.lifespan
+	$t1 = "Inside the constructor for MathOperation class"
+	param $t1
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	return
+	endfunc
+	
+_CZ22MathOperation.uncalledPMathOperationvi:
+.LFB1:
+	beginfunc
+	self = popparam
+	x = popparam
+	$t2 = "This is never called"
+	param $t2
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	return
+	endfunc
+	
+_Z4mainv:
+.LFB2:
+	beginfunc
+	$t3 = "This is a simple testcase for classes"
+	param $t3
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	stackpointer +xxx
+		call MathOperation,0
+	stackpointer -yyy
+	math = MathOperation
+	return
+	endfunc
+	
+main:
+.LFB3:
+	beginfunc
+goto .L0:
+.L0:
+goto .L1:
+.L1:
+goto .L2:
+.L2::
+.L3:
+	stackpointer +xxx
+		call main,0
+	stackpointer -yyy
+.L4:
+.L5:
+	return
+	endfunc
+	
+

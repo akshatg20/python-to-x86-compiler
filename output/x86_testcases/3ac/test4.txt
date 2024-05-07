@@ -1,0 +1,82 @@
+_Z9array_sumPii:
+.LFB0:
+	beginfunc
+	array = popparam
+	size = popparam
+	sum = 0
+	$t2 = 0
+	goto .L0
+.L0:
+	$t4 = $t2 < size
+	ifFalse $t4 goto .L1
+	$t1 = sum + array[i]
+	sum = $t1
+	sum = sum
+	$t3 = $t2 + 1
+	$t2 = $t3
+	goto .L0
+.L1:
+	paramret sum
+	return
+	endfunc
+	
+_Z4mainv:
+.LFB1:
+	beginfunc
+	$t5 = -4
+	array = [ 1  , 2 , 3 , 4 , 7 , 20 , $t5 , 5 ]
+	length = 8
+	$t6 = array
+	param $t6
+	stackpointer +xxx
+		call array_sum,1
+	stackpointer -yyy
+	$t7 = popparam
+	sum = $t7
+	$t8 = "The array is given by"
+	param $t8
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t9 = 0
+	goto .L3
+.L3:
+	$t11 = $t9 < length
+	ifFalse $t11 goto .L4
+	param array[i]
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t10 = $t9 + 1
+	$t9 = $t10
+	goto .L3
+.L4:
+	$t12 = "The sum of array elements is "
+	param $t12
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param sum
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	return
+	endfunc
+	
+main:
+.LFB2:
+	beginfunc
+	goto .L2
+.L2:
+	goto .L5
+.L5::
+.L6:
+	stackpointer +xxx
+		call main,0
+	stackpointer -yyy
+.L7:
+.L8:
+	return
+	endfunc
+	
+

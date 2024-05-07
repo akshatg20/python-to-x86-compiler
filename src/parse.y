@@ -232,8 +232,6 @@ int PARSER_DEBUG_INSIDE_VERBOSE = 0;        // for verbose output purposes
 %type<ast> comp_for
 %type<ast> comp_if
 
-%type<ast> forcheck
-
 %%
 
 // --------------------- Segment 1 ---------------------
@@ -1484,58 +1482,58 @@ while_stmt:
         ;  
 
 // #changegrammar
-forcheck: 
-        exprlist IN testlist {
-                // FOR, IN and COLON are operators. FOR and IN are propogated and COLON ignored for AST
-                if(isAST == false || AST_STRUCTURE_DEBUG == 1) {
-                        $$ = processNodes("forcheck", 3,
-                                $1,
-                                createNode("IN", $2),
-                                $3
-                        );
-                }
-                else {
-                        $$ = processNodes("forcheck", 2,
-                                $1,
-                                $3
-                        );
-                        ($$->content) = string($2);
-                }
+// forcheck: 
+//         exprlist IN testlist {
+//                 // FOR, IN and COLON are operators. FOR and IN are propogated and COLON ignored for AST
+//                 if(isAST == false || AST_STRUCTURE_DEBUG == 1) {
+//                         $$ = processNodes("forcheck", 3,
+//                                 $1,
+//                                 createNode("IN", $2),
+//                                 $3
+//                         );
+//                 }
+//                 else {
+//                         $$ = processNodes("forcheck", 2,
+//                                 $1,
+//                                 $3
+//                         );
+//                         ($$->content) = string($2);
+//                 }
 
-                ($$->columnno) = yylloc.first_column;
-                ($$->lineno) = yylineno;
-                $$->name = "forcheck.1";
-        }
-        ;
+//                 ($$->columnno) = yylloc.first_column;
+//                 ($$->lineno) = yylineno;
+//                 $$->name = "forcheck.1";
+//         }
+//         ;
+
+// for_stmt:
+//         FOR forcheck COLON suite else_stmt {
+//                 // FOR, IN and COLON are operators. FOR and IN are propogated and COLON ignored for AST
+//                 if(isAST == false || AST_STRUCTURE_DEBUG == 1) {
+//                         $$ = processNodes("for_stmt", 5,
+//                                 createNode("FOR", $1),
+//                                 $2,
+//                                 createNode("COLON", $3),
+//                                 $4,
+//                                 $5
+//                         );
+//                 }
+//                 else {
+//                         $$ = processNodes("for_stmt", 3,
+//                                 $2,
+//                                 $4,
+//                                 $5
+//                         );
+//                         ($$->content) = string($1) + "$" + string($3);
+//                 }
+
+//                 ($$->columnno) = yylloc.first_column;
+//                 ($$->lineno) = yylineno;
+//                 $$->name = "for_stmt.1";
+//         }
+//         ;
 
 for_stmt:
-        FOR forcheck COLON suite else_stmt {
-                // FOR, IN and COLON are operators. FOR and IN are propogated and COLON ignored for AST
-                if(isAST == false || AST_STRUCTURE_DEBUG == 1) {
-                        $$ = processNodes("for_stmt", 5,
-                                createNode("FOR", $1),
-                                $2,
-                                createNode("COLON", $3),
-                                $4,
-                                $5
-                        );
-                }
-                else {
-                        $$ = processNodes("for_stmt", 3,
-                                $2,
-                                $4,
-                                $5
-                        );
-                        ($$->content) = string($1) + "$" + string($3);
-                }
-
-                ($$->columnno) = yylloc.first_column;
-                ($$->lineno) = yylineno;
-                $$->name = "for_stmt.1";
-        }
-        ;
-
-/* for_stmt:
         FOR exprlist IN testlist COLON suite else_stmt {
                 // FOR, IN and COLON are operators. FOR and IN are propogated and COLON ignored for AST
                 if(isAST == false || AST_STRUCTURE_DEBUG == 1) {
@@ -1563,7 +1561,7 @@ for_stmt:
                 ($$->lineno) = yylineno;
                 $$->name = "for_stmt.1";
         }
-        ; */
+        ;
 
 // #notrequired
 try_stmt:
@@ -2958,7 +2956,7 @@ atom:
         | TOKEN_NONE {
                 if(isAST == false || AST_STRUCTURE_DEBUG == 1) {
                         $$ = processNodes("atom", 1,
-                                createNode("TOKEN_NAME", $1)
+                                createNode("TOKEN_NONE", $1)
                         );
                 }
                 else $$ = createNode("TOKEN_NONE", $1);
@@ -3300,7 +3298,6 @@ continued_subscript:
         }
         ;
 
-// #notrequired
 subscript:
         test {
                 if(isAST == false || AST_STRUCTURE_DEBUG == 1) $$ = processNodes("subscript", 1, $1);
@@ -3467,7 +3464,6 @@ subscript:
         }
         ;
 
-// #notrequired
 sliceop:
         COLON test {
                 // This is a tough case. Here COLON is a unary operator and thus we cannot directly

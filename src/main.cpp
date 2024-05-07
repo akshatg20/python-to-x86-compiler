@@ -2,6 +2,7 @@
 #define MAIN_CPP
 
 #include <iostream>
+#include <deque>
 #include <string.h>
 #include <string>
 #include <iomanip>
@@ -9,6 +10,7 @@
 #include <cstdio>
 #include <unistd.h>
 #include <cstring>
+#include <unordered_map>
 using namespace std;
 
 #ifdef __has_include
@@ -32,6 +34,9 @@ using namespace std;
 #ifndef GEN_3AC_HPP
 #include "gen_3ac.hpp"
 #endif
+#ifndef GEN_X86_HPP
+#include "gen_x86.hpp"
+#endif
 
 /*********************************** ASSUMPTIONS FOR THE CONSTRUCTION OF COMPILER *********************************/
 
@@ -54,10 +59,15 @@ extern int AST_DEBUG_OUTSIDE_VERBOSE;
 extern int AST_DEBUG_INSIDE_VERBOSE;
 extern int SYMBOL_TABLE_DEBUG_INSIDE_VERBOSE;
 extern int SYMBOL_TABLE_DEBUG_OUTSIDE_VERBOSE;
+extern int DEBUG_X86_INSIDE_VERBOSE;
+extern int DEBUG_X86_OUTSIDE_VERBOSE;
 extern bool isAST;
 extern map<string,int> lexemeCount;
 extern map<string,string> lexemeMap;
 extern ASTNode* root;
+extern SymbolTable* currTable;
+extern SymbolTable* globalTable;
+extern unordered_map<string, SymbolTable*> labelMap;
 
 /*********************************** DATA STORAGE STRUCTURES ******************************************************/
 
@@ -73,78 +83,26 @@ extern ASTNode* root;
 // Global debug control variables.
 int DEBUG_INSIDE_VERBOSE = 0;
 int DEBUG_OUTSIDE_VERBOSE = 0;
+int DEBUG_3AC_INSIDE_VERBOSE;
+int DEBUG_3AC_OUTSIDE_VERBOSE;
 int DEBUG_3AC = 0;
 int DEBUG_SYMBOL_TABLE = 0;
+int DEBUG_X86 = 0;
+int MILESTONE2_DEMO = 1;
 // Compiler configuration variables
-char *inputfile_path,*outputfile_path,*errorfile_path,*astfile_path,*dotfile_path,*parsefile_path,*assembly_outputfile_path,*path_3ac,*path_sym;
+char *inputfile_path,*outputfile_path,*errorfile_path,*astfile_path,*dotfile_path,
+        *parsefile_path,*assembly_outputfile_path,*path_3ac,*path_sym;
 int DOT_GENERATION = 0, AST_GENERATION = 0, PARSE_TREE_GENERATION = 0, GENERATION_3AC = 0, SYMBOL_TABLE_PRINT = 0;
 int COMPILER_DEBUG = 0;
-// Symbol Table Configurations
-SemanticError* ErrorMsg;                    // Semantic Error Message
-SymbolTable* currTable;                     // pointer to the current symbol table in use
-SymbolTable* globalTable;                   // pointer to the root (global scope) symbol table
 int current_scope = 0;                      // maintains the current scope while parsing, initialized to zero
+RegisterAllocation* regAlloc;
+
 
 /*********************************** DATA STORAGE ELEMENTS ********************************************************/
 
 /*********************************** FUNCTION DEFINITIONS *********************************************************/
 
 // All functions that you have declared should go here.
-
-// Function to check the input program file extension
-void filternewline(string* s)
-{
-    string& ns = *s; // Use a reference to modify the original string
-    bool prev = false;
-    for (int i = 0; i < ns.size(); ++i)
-    {
-        if (ns[i] == '\n')
-        {
-            if (prev)
-            {
-                ns.erase(i, 1);
-                i--; // Adjust the index after erasing a character
-            }
-            else
-            {
-                prev = true;
-            }
-        }
-        else
-        {
-            prev = false;
-        }
-    }
-}
-
-void removerepeats(string* s)
-{
-    string& str = *s; // Work with a reference to the original string
-    string result;
-    string prevLine;
-    size_t pos = 0;
-
-    // Use string::npos as the condition to run until the end of the string
-    while (pos != string::npos)
-    {
-        size_t newPos = str.find('\n', pos);
-        string currentLine = str.substr(pos, newPos - pos);
-
-        // If current line is not the same as previous, append it to result
-        if (currentLine != prevLine || pos == 0) // Also, always include the first line
-        {
-            if (!result.empty()) result += '\n'; // Append newline before adding the line, except for the first line
-            result += currentLine;
-        }
-
-        prevLine = currentLine;
-
-        if (newPos == string::npos) break; // If at the end of the string, exit the loop
-        pos = newPos + 1; // Move past the current newline character
-    }
-
-    *s = result; // Assign the processed string back to the original pointer
-}
 
 bool isPyFile(const char* filename) {
     const char* extension = ".py";
@@ -240,6 +198,8 @@ int command_parse(int argc, char* argv[]) {
             DEBUG_INSIDE_VERBOSE = 1;
             AST_DEBUG_INSIDE_VERBOSE = 1;
             SYMBOL_TABLE_DEBUG_INSIDE_VERBOSE = 1;
+            DEBUG_3AC_INSIDE_VERBOSE = 1;
+            DEBUG_X86_INSIDE_VERBOSE = 1;
             if(DEBUG_OUTSIDE_VERBOSE) cout << "[COMPILER]: Identified " << argv[i] << " option\n";
         }
         else if(!strcmp(argv[i],"-f") || !strcmp(argv[i],"-F") || !strcmp(argv[i],"--full")) {
@@ -253,6 +213,10 @@ int command_parse(int argc, char* argv[]) {
             AST_DEBUG_INSIDE_VERBOSE = 1;
             SYMBOL_TABLE_DEBUG_INSIDE_VERBOSE = 1;
             SYMBOL_TABLE_DEBUG_OUTSIDE_VERBOSE = 1;
+            DEBUG_3AC_INSIDE_VERBOSE = 1;
+            DEBUG_3AC_OUTSIDE_VERBOSE = 1;
+            DEBUG_X86_INSIDE_VERBOSE = 1;
+            DEBUG_X86_OUTSIDE_VERBOSE = 1;
             if(DEBUG_OUTSIDE_VERBOSE) cout << "[COMPILER]: Identified " << argv[i] << " option\n";
         }
         else if(!strcmp(argv[i],"-h") || !strcmp(argv[i],"-H") || !strcmp(argv[i],"--help")) {
@@ -311,21 +275,6 @@ int command_parse(int argc, char* argv[]) {
             return 1;
         }
     }
-
-    if(strlen(assembly_outputfile_path) == 0) {
-        // Get the current working directory
-        char cwd[1000];
-        if (getcwd(cwd, sizeof(cwd)) != NULL) {
-            // Append the file name to the current directory path
-            strcat(cwd, "/out.s");
-            assembly_outputfile_path = cwd;
-        }
-        else {
-            // Handle error if getcwd fails
-            fprintf(stderr, "[COMPILER ERROR]: Error in getting the current working directory.\n");
-            return 1;
-        }
-    }
     
     if(DEBUG_INSIDE_VERBOSE) {
         if(strlen(inputfile_path) > 0) cout << "[COMPILER]: Input File is " << inputfile_path <<"\n";
@@ -341,6 +290,7 @@ int command_parse(int argc, char* argv[]) {
             if(strlen(astfile_path) > 0 && strlen(parsefile_path) > 0) {
                 cout << "[COMPILER]: AST output file is " << astfile_path <<"\n";
                 cout << "[COMPILER]: No Parse Tree can be generated because --ast flag was given\n";
+                PARSE_TREE_GENERATION = 0;
             }
             else if(strlen(astfile_path) > 0) {
                 cout << "[COMPILER]: AST output file is " << astfile_path <<"\n";
@@ -349,6 +299,7 @@ int command_parse(int argc, char* argv[]) {
             else if(strlen(parsefile_path) > 0) {
                 cout << "[COMPILER]: Parse Tree output file is " << parsefile_path <<"\n";
                 cout << "[COMPILER]: No AST is to be generated\n";
+                isAST = false;
             }
             else {
                 cout << "[COMPILER]: No Parse Tree is to be generated\n";
@@ -360,13 +311,17 @@ int command_parse(int argc, char* argv[]) {
         else {
             if(strlen(astfile_path) > 0 && strlen(parsefile_path) > 0) {
                 cout << "[COMPILER]: Parse Tree output file is " << parsefile_path <<"\n";
-                cout << "[COMPILER]: No AST can be generated because --3ac flag was given\n";
+                if(strlen(path_3ac) > 0) cout << "[COMPILER]: No AST can be generated because --3ac flag was given\n";
+                else cout << "[COMPILER]: No AST can be generated because --symbol flag was given\n";
                 isAST = false;
+                AST_GENERATION = 0;
             }
             else if(strlen(astfile_path) > 0) {
-                cout << "[COMPILER]: No AST can be generated because --3ac flag was given\n";
+                if(strlen(path_3ac) > 0) cout << "[COMPILER]: No AST can be generated because --3ac flag was given\n";
+                else cout << "[COMPILER]: No AST can be generated because --symbol flag was given\n";
                 cout << "[COMPILER]: No Parse Tree is to be generated\n";
                 isAST = false;
+                AST_GENERATION = 0;
             }
             else if(strlen(parsefile_path) > 0) {
                 cout << "[COMPILER]: Parse Tree output file is " << parsefile_path <<"\n";
@@ -396,8 +351,10 @@ int command_parse(int argc, char* argv[]) {
         }
     }
 
+
     // Begin the lexer on the inputfile if the input file is not the standard input.
-    if(strlen(inputfile_path) > 0) {
+    if(strlen(inputfile_path) > 0) 
+    {
         inputfile = fopen(inputfile_path, "r");
         if(!inputfile) {
             fprintf(stderr, "[COMPILER ERROR]: File %s not found\n", inputfile_path);
@@ -439,7 +396,7 @@ int main(int argc, char* argv[]) {
         argv[5] = strdup("--parse");
         argv[6] = strdup("b.pdf");
     }
-    cout << "argv: " << argv[2] << "\n";
+    // cout << "argv: " << argv[2] << "\n";
     
     /***************************************** COMMAND LINE UTILITY *******************************************/
     
@@ -451,6 +408,43 @@ int main(int argc, char* argv[]) {
         // Program terminates here as a help flag was called or an error occured during compilation.
         return 1;
     }
+    // printf("%s\n", assembly_outputfile_path);
+
+
+    if(DEBUG_X86) {
+
+        // cout << "start\n";
+
+        const char* file_path_3ac = "../testcases/x86_testcases/x86_output/test4/test4.txt";
+        const char* output_x86_path = "../testcases/x86_testcases/x86_output/test4/test4_akshat.s";
+
+        FILE* output_x86;
+        output_x86 = fopen(output_x86_path, "w");
+
+        // cout << "file opened\n";
+
+        if(!output_x86) {
+            fprintf(stderr, "[COMPILER ERROR]: File %s not found\n", output_x86_path);
+            return 1;
+        }
+
+        string code_3ac = readFromFile(file_path_3ac);
+
+        // cout << "code read from file\n";
+
+        regAlloc = new RegisterAllocation();
+
+        // cout << "reg allocated\n";
+
+        int flag = generate_x86(code_3ac,output_x86);
+
+        if(flag < 0) {
+            printf("[x86 GENERATION ERROR]: Error in x86_64 generation\n");
+            return 1;
+        }
+        return 0;
+    }
+    // printf("%s\n", assembly_outputfile_path);
 
     /***************************************** COMMAND LINE UTILITY ENDS **************************************/
 
@@ -460,11 +454,11 @@ int main(int argc, char* argv[]) {
     // Call the main parser loop which drives the lexer as well internally.
     // The symbol table is created here itself and semantic checking is done alongwith syntax checking.
     // A visualisation of the parsing is created in form of a abstract syntax tree of the program.
+    // printf("Just before entering parser %s\n", assembly_outputfile_path);
     if(DEBUG_OUTSIDE_VERBOSE) cout << "[COMPILER]: Entering the main parser loop" << "\n";
-    ErrorMsg = new SemanticError();
-    currTable = new SymbolTable();
-    globalTable = currTable;
+    // printf("Here just above parser %s\n", assembly_outputfile_path);
     flag = yyparse();
+    // printf("%s\n", assembly_outputfile_path);
     if(flag != 0) {
         // Program terminates here as an error occured during parsing.
         return 1;
@@ -492,6 +486,7 @@ int main(int argc, char* argv[]) {
 
     // If the AST flag is set then the compiler would not move ahead this
     if(isAST == true) return 0;
+    // printf("%s\n", assembly_outputfile_path);
 
     // Debug for symbol table
     if(DEBUG_SYMBOL_TABLE == 1) {
@@ -499,11 +494,11 @@ int main(int argc, char* argv[]) {
         TypeExpression* attr1 = type_int();
         TypeExpression* attr2 = type_bool();
 
-        vector<TypeExpression*> fields;
+        deque<TypeExpression*> fields;
         fields.push_back(attr1);
         fields.push_back(attr2);
 
-        TypeExpression* T = type_record(fields,1,vector<TypeExpression*>());
+        TypeExpression* T = type_record(fields,1,deque<TypeExpression*>());
 
         add("DummyClass","CLASS",T,1,0,&flag);
 
@@ -538,20 +533,25 @@ int main(int argc, char* argv[]) {
         
         // TOP TO DOWN PASS SEMANTIC ANALYSIS PHASE
         // Semantic Analysis and Symbol Table construction is done here
+        if(DEBUG_3AC_OUTSIDE_VERBOSE) cout << "[COMPILER]: ENTERING INTO SEMANTIC ANALYSIS" << "\n";
         flag = semantic_analysis();
-        // cout << "RETURNED FROM SEMANTIC ANALYSIS" << "\n";
+        if(DEBUG_3AC_OUTSIDE_VERBOSE) cout << "[COMPILER]: RETURNED FROM SEMANTIC ANALYSIS" << "\n";
         if(flag < 0) {
             // Some kind of error occured during semantic analysis which will be caught by the function.
             printf("[SEMANTIC ANALYSIS]: Error in semantic analysis of the program.\n");
             return 1;
         }
-        // Compute offsets for the Symbol Table entries
-        flag = compute_offsets(globalTable, 0);
-        if(flag < 0) {
-            // Some kind of error occured during computation of offsets in the Symbol Table.
-            // However, this is not a semantic or syntax error. This is a bug in the code.
-            printf("[SYMBOL TABLE]: Error in computation of offsets in Symbol Table.\n");
-            return 1;
+
+        if(MILESTONE2_DEMO == 0) {
+            // Compute offsets for the Symbol Table entries
+            if(DEBUG_3AC_OUTSIDE_VERBOSE) cout << "[COMPILER]: GLOBAL OFFSETS COMPUTATION STARTED" << "\n";
+            flag = compute_offsets(globalTable, 0);
+            if(flag < 0) {
+                // Some kind of error occured during computation of offsets in the Symbol Table.
+                // However, this is not a semantic or syntax error. This is a bug in the code.
+                printf("[SYMBOL TABLE]: Error in computation of offsets in Symbol Table.\n");
+                return 1;
+            }
         }
 
         // Dump the symbol table as per the requirements of the given compiler flags
@@ -564,10 +564,23 @@ int main(int argc, char* argv[]) {
             }
             
             // Call the function to dump all of the symbol table in the given file
+            if(DEBUG_3AC_OUTSIDE_VERBOSE) cout << "[COMPILER]: DUMPING THE SYMBOL TABLE" << "\n";
             dumpAllSTs(path_sym, globalTable);
-            return 0;
+        }
+
+        if(MILESTONE2_DEMO == 0) {
+            // Creation of Activation Records for runtime support
+            if(DEBUG_3AC_OUTSIDE_VERBOSE) cout << "[COMPILER]: FILLING ACTIVATION RECORDS" << "\n";
+            flag = fillActivationRecords(globalTable);
+            if(flag < 0) {
+                // Some kind of error occured during computation of activation record from Symbol Table.
+                // However, this is not a semantic or syntax error. This is a bug in the code.
+                printf("[SYMBOL TABLE]: Error in creation of Activation Records.\n");
+                return 1;
+            }
         }
     }
+    // printf("%s\n", assembly_outputfile_path);
 
     /***************************************** FRONTEND OF COMPILER ENDS **************************************/
 
@@ -575,20 +588,15 @@ int main(int argc, char* argv[]) {
 
     // REPRESENTATION GENERATION PHASE
     // Generation of 3AC IR
-    flag = generate3AC(root);
-
-    filternewline(root->code);
-    removerepeats(root->code);
-
-
-
-
+    if(DEBUG_INSIDE_VERBOSE) cout << "[COMPILER]: Enterring 3AC Construction Unit" << "\n";
+    flag = make3AC(root);
     if(flag < 0) {
         // Some kind of error occured during computation of offsets in the Symbol Table.
         // However, this is not a semantic or syntax error. This is a bug in the code.
         printf("[COMPILER]: Error in code generation of the 3AC IR. Exiting from the compiler\n");
         return 1;
     }
+    if(DEBUG_OUTSIDE_VERBOSE) cout << "[COMPILER]: Already Exited 3AC Construction Unit" << "\n";
     
     /***************************************** INTERMEDIATE REPRESENTATION ENDS *******************************/
     
@@ -598,52 +606,89 @@ int main(int argc, char* argv[]) {
     // Machine Optimizations for the generated IR for efficient execution of the program.
 
 
-    // Writing of the 3AC IR in a text file based on the flags passed to the compiler from command line.
-    if(GENERATION_3AC == 1) {
-        FILE* output_3ac;
-        FILE* out = stdout;
-        output_3ac = fopen(path_3ac, "w");
-        if(!output_3ac) {
-            fprintf(stderr, "[COMPILER ERROR]: File %s not found\n", path_3ac);
-            return 1;
+    // Writing of the 3AC IR in a text file.
+    FILE* output_3ac;
+    if(strlen(path_3ac) == 0) {
+        string path_3ac_string = "3ac_out.txt";
+        path_3ac = const_cast<char*>(path_3ac_string.c_str());
+        // printf("Path of 3ac file %s\n", path_3ac);
+    }
+    output_3ac = fopen(path_3ac, "w");
+    if(!output_3ac) {
+        fprintf(stderr, "[COMPILER ERROR]: File %s not found\n", path_3ac);
+        return 1;
+    }
+    
+    // Write into file the code for 3AC
+    string code_3ac = *(root->code);
+    // cout << code_3ac << "\n";
+    fprintf(output_3ac, "%s\n", const_cast<char*>(code_3ac.c_str()));
+    fclose(output_3ac);
+    // fprintf(output_3ac, "%s", code_3ac.c_str());
+    // char* code = const_cast<char*>(code_3ac.c_str());
+    // fprintf(output_3ac, code);
+
+    if(DEBUG_OUTSIDE_VERBOSE) {
+        // Print the label mappings generated by the compiler for the x86 code generation
+        for(unordered_map<string, SymbolTable*>::iterator it = labelMap.begin(); it != labelMap.end(); ++it) {
+            cout << "[COMPILER]: Label " << (it->first) << " is mapped to Symbol Table " << (it->second->name) << "\n";
         }
-        else if(freopen(path_3ac, "w", stdout) == NULL) {
-            fprintf(stderr, "[COMPILER ERROR]: Unable to open assembly output file %s\n", path_3ac);
-            return 1;
-        }
-        
-        // Write into file the code for 3AC
-        string code_3ac = *(root->code);
-        cout << code_3ac << "\n";
-        stdout = out;
-        // char* code = const_cast<char*>(code_3ac.c_str());
-        // fprintf(output_3ac, code);
     }
 
-    // CODE GENERATION PHASE
-    // Conversion of intermediate code to final x86 assembly program that can run directly on modern systems supporting x86 architecture.
-    
+    // printf("Path of 3ac file %s\n", path_3ac);
+    if(MILESTONE2_DEMO == 0) {
+        // CODE GENERATION PHASE
+        // Conversion of intermediate code to final x86 assembly program that can run directly on modern systems supporting x86 architecture.
+        // printf("Path of 3ac file %s\n", path_3ac);
+        if(strlen(assembly_outputfile_path) == 0) {
+            // Get the current working directory
+            char cwd[1000];
+            if (getcwd(cwd, sizeof(cwd)) != NULL) {
+                // Append the file name to the current directory path
+                strcat(cwd, "/out.s");
+                assembly_outputfile_path = cwd;
+            }
+            else {
+                // Handle error if getcwd fails
+                fprintf(stderr, "[COMPILER ERROR]: Error in getting the current working directory.\n");
+                return 1;
+            }
+        }
+        FILE* output_x86;
+        // printf("%s\n", assembly_outputfile_path);
+        output_x86 = fopen(assembly_outputfile_path, "w");
+        if(!output_x86) {
+            fprintf(stderr, "[COMPILER ERROR]: File %s not found\n", assembly_outputfile_path);
+            return 1;
+        }
 
-    // Setup the assembly output file and output the compiled program into an x86 assembly
-    // FILE* assembly_outputfile;
-    // if(strlen(assembly_outputfile_path) > 0) {
-    //     assembly_outputfile = fopen(outputfile_path, "w");
-    //     if(!assembly_outputfile) {
-    //         fprintf(stderr, "[COMPILER ERROR]: File %s not found\n", assembly_outputfile_path);
-    //         return 1;
-    //     }
-    //     else if(freopen(assembly_outputfile_path, "w", stdout) == NULL) {
-    //         fprintf(stderr, "[COMPILER ERROR]: Unable to open assembly output file %s\n", assembly_outputfile_path);
-    //         return 1;
-    //     }
+        regAlloc = new RegisterAllocation();
+        string path_3ac_string(path_3ac);
 
-    //     // Call the function to print the x86 code in a given file
+        flag = generate_x86(code_3ac, output_x86);
+        if(flag < 0) {
+            // Some kind of error occured during computation of offsets in the Symbol Table.
+            // However, this is not a semantic or syntax error. This is a bug in the code.
+            printf("[COMPILER]: Error in x86 code generation. Exiting from the compiler\n");
+            return 1;
+        }
 
-    // }
-    // else {
-    //     fprintf(stderr, "[COMPILER ERROR]: Unable to generate path for assembly output file\n");
-    //     return 1;
-    // }
+        path_3ac = const_cast<char*>(path_3ac_string.c_str());
+        // printf("Path of 3ac file %s\n", path_3ac);
+    }
+
+    // printf("Path of 3ac file %s\n", path_3ac);
+    // Deletion of the 3AC IR in a text file based on the flags passed to the compiler from command line.
+    if(GENERATION_3AC == 0) {
+        string path_3ac_string(path_3ac);
+        string command = "rm " + path_3ac_string; // Command to execute
+        // cout << command << "\n";
+        int result = system(const_cast<char*>(command.c_str())); // Execute the command
+        if(result != 0) { // Check if the command executed successfully
+            fprintf(stderr, "[COMPILER ERROR]: An internal error occurred.\n");
+            return 1;
+        }
+    }
 
     /***************************************** BACKEND OF COMPILER ENDS ***************************************/
  

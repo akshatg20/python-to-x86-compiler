@@ -18,7 +18,10 @@ using namespace std;
 // All functions that you want to declare should go here.
 
 // Call this function to generate 3AC IR from the root node of the Parse Tree
-int generate3AC(struct ASTNode* root);
+int make3AC(ASTNode* root);
+// int generate3AC(ASTNode* root);
+int typeset_3ac_code(string code);
+
 
 /*********************************** FUNCTION DECLARATIONS ********************************************************/
 

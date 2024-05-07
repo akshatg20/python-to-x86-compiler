@@ -1,0 +1,83 @@
+_Z9factoriali:
+.LFB0:
+	beginfunc
+	x = popparam
+	$t1 = x <= 1
+	ifFalse $t1 goto .L1
+.L0:
+	paramret 1
+	return
+.L1:
+.L2:
+	$t2 = x - 1
+	$t3 = $t2
+	param $t3
+	stackpointer +xxx
+		call factorial,1
+	stackpointer -yyy
+	$t4 = popparam
+	$t5 = x * $t4
+	paramret $t5
+	return
+	endfunc
+	
+_Z4mainv:
+.LFB1:
+	beginfunc
+	x = 10
+	i = 0
+	$t6 = x + 1
+	$t11 = 0
+	goto .L4
+.L4:
+	$t13 = $t11 < $t6
+	ifFalse $t13 goto .L5
+	$t7 = i
+	param $t7
+	stackpointer +xxx
+		call factorial,1
+	stackpointer -yyy
+	$t8 = popparam
+	y = $t8
+	$t9 = "Value of factorial of "
+	$t10 = " is equal to "
+	param $t9
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param i
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param $t10
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param y
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t12 = $t11 + 1
+	$t11 = $t12
+	goto .L4
+.L5:
+	return
+	endfunc
+	
+main:
+.LFB2:
+	beginfunc
+	goto .L3
+.L3:
+	goto .L6
+.L6::
+.L7:
+	stackpointer +xxx
+		call main,0
+	stackpointer -yyy
+.L8:
+.L9:
+	return
+	endfunc
+	
+

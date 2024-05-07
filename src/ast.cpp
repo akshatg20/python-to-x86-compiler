@@ -68,30 +68,46 @@ vector<string> unary_operators = {":", "raise", "assert", "finally", "except", "
 
 // All functions that you have declared should go here.
 
+int setDebugNum()
+{
+        static int x = 0;
+        return ++x;
+}
+
 // AST node creation routine.
 ASTNode* createNode(string type, string content)  {
         ASTNode* node = new ASTNode(type, content);
         if(content != EPSILON && content != "") node->full_content = node->content;
         node->children = deque<ASTNode*>();
-
+        node->name = "";
+        node->debug_type = "";
         // giving default values to all nodes
         node->lineno = 0;
         node->columnno = 0;
-        node->tr=new string("");
-        node->fl=new string("");
-        node->next=new string("");
-        node->name="";
-        node->code=new string("");
-        node->addr=new string("");
-        node->label="";
-        node->val= new string("");
+        node->debug_num = 0;
+        
+        node->tr = new string("");
+        node->fl = new string("");
+        node->next = new string("");
+        node->code = new string("");
+        node->addr = new string("");
+        node->val = new string("NULL");
+        node->call = new string("");
+        
+        node->T = NULL;
+        node->declarations = vector<STentry*>();
+        node->names = deque<string>();
+        node->label = "";
+        node->table = NULL;
+
 
         return node;
 }
 
 // The main tree generation function which constructs and joins the whole AST or Parse Tree based on
 // the flag passed in the boolean "isAST".
-ASTNode* processNodes(string name,int numNodes, ...)  {
+ASTNode* processNodes(string name, int numNodes, ...)  
+{
         // All the arguments passed to the function is stored in "arr" vector using <stdarg.h> library routines.
         vector<ASTNode*> arr; // This is a vector to store the arguments passed to the function
         va_list args;
@@ -173,9 +189,9 @@ ASTNode* processNodes(string name,int numNodes, ...)  {
                         if(numNodes > 2) { arr.pop_back(); content = "await"; }
                 }
                 else if(name == "") {
-
+                        // No extra handling required here. The program generates the other exception
+                        // cases correctly by handling in the 2nd pass of the AST.
                 }
-
 
                 if(numNodes > 0) node = createNode(name, content);
                 else node = createNode(name, EPSILON);
@@ -185,9 +201,8 @@ ASTNode* processNodes(string name,int numNodes, ...)  {
                 }   
         }
 
-        static int x = 0;
-        node->j = x++;
-        node->type = node->type +" - " + to_string(node->j) + " - " + node->name;
+        node->debug_num = setDebugNum();
+        node->debug_type = node->type +" - " + to_string(node->debug_num) + " - " + node->name;
 
         return node;
 }
@@ -300,7 +315,8 @@ ASTNode* simplify_ast(ASTNode* root) {
 }
 
 // Generate new ID for each node in the AST or Parse Tree for the purpose of dot script generation.
-int getNewId() {
+int getNewId() 
+{
         return ++counter;
 }
 
@@ -309,7 +325,7 @@ int getNewId() {
 pair<string,string> writeTree_recursive(ASTNode* node, int id) {
     string def = "";
     string arr = "";
-    def = def +  "node" + std::to_string(id) + " [label=\"" + node->type + " (" + dquote_to_html(node->content) + ")\"];\n";
+    def = def +  "node" + std::to_string(id) + " [label=\"" + node->type + " (" + dquote_to_html(node->content)+")\"];\n";
     for (int i = 0; i < node->children.size(); i++) {
         int childId = getNewId();
         arr = arr + "node" + to_string(id) + " -- node" + to_string(childId) + ";\n";

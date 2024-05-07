@@ -16,42 +16,128 @@ Assumptions:
 
 6) string type will be given, extra variable to store column of declaration will be given
 
----------------------------------------- "MILESTONE 2 WORK" ------------------------------------------------
-1) Read Slide 9 - Runtime Environments from CS335 Course Webpage.
-    a) You will have to read about x86 assembly and calling conventions - Given in milestone 2 PDF
-    b) In this milestone we have to implement the "Activation Records" only and rest of the x86 code generation is in Mileston 3
-        -> "Activation Records" record the state of the program execution - Program Counter, Machine Registers and Procedure Calls.
-        -> Create a structure or class for "Activation Records" - as per milestone 2 requirements.
-        -> Create generic helper functions to maintain program virtual memory and execution state where all code and variables will be stored
-            -> It is somewhat like a "Symbol Table" just that you would need to study about machine specific conventions in x86.
-            -> This virtual program memory will be managed by compiler.
-            -> This should be independent of the rest of the components of the compiler (especially 3AC IR).
-                -> Please do tell if you need support from other pieces of the project.
-    c) Think of a roadmap for what all we have to implement for "runtime support" in milestone 2.
-        -> Will discuss this in the next meeting.
-    d) Write your code in "gen_x86.cpp" and write any structure or classes in "gen_x86.hpp"
-        **-> You can get some help from "gen_x86.hpp" in "milestone 4" given by Shashwat earlier.
-        -> The "x86" code should run via GAS on Linux (at the end of Milestone 3) - I don't know whether it makes any difference or not.
-2) Correction of testcases we are using for "Milestone 2" checking -
-    a) All testcases are present in testcases/ directory
-        -> Please see and update them to make them statically typed.
-        -> None of them should use any prohibited feature based on "Milestone 1 PDF"
-    b) Add any extra testcases that you would like us to consider in "Milestone 2"
-    c) We will spend the last day before submission checking our implementation for correctness using these cases.
-3) ("Not ready now - Will inform when this work is ready")
-Some more functionality is required in symbol table. That will be added in "symbol_table.hpp" with comments -
-    a) You need to provide function definitions for these functions.
-        -> Please do not add extra internal helper functions in "symbol_table.hpp" file. Header should only have functions which will be called from outside of the symbol_table.
-    b) Some more functionalities may be added as we progress.
-
-
 
 ------------------------------------------------ "DOUBTS IN MILESTONE 2" --------------------------------------------
 
 1) How to manage function calls with default values of parameters?
 
-2) Can classes have same name in inherited scoopes?
+2) Can classes have same name in inherited scopes?
 
 3) Starting portion of 3AC generating too many "goto end".
 
 4) In "continued_file_input.2", do we need to create a new label?
+
+5) function overloading for only different return type not supported
+
+6) Have not supported the following cases in my "3AC Lexer" :
+    -> *x = -y
+
+7) Have not supported more than 6 arguments in function for x86_64
+
+8) LOGICAL AND AND LOGICAL OR not yet supported in x86_64 generation
+
+9) leave and ret being printed even in cases where it should be just ret
+
+10) BIN_POWER not supported yet
+
+11) UNARY_NOT not supported yet
+
+---------------------------------------------------------- "IGNORE SECTION" ----------------------------------------------------------
+
+// class RunTimeEnv {
+// private:
+//   stack<ActivationRecord> controlStack;             // holds the activation frames
+//   int stackPtr;                                     // points to the top of the stack, stored in %rsp
+//   int basePtr;                                      // used as a reference to access local variables etc., usually stored in %rbp
+//   int instrPtr;                                     // points to the address of the next instruction, stored in %rip
+//   int rvInt;                                        // integer return value from function, stored in %rax
+//   float rvFloat;                                    // float return value, stored in usually %xmm0-%xmm1
+
+// public:
+//   // Constructor
+//   RunTimeEnv(int stackPtr = 0x100000, int basePtr = 0x100000, int instrPtr = 0x0, int rvInt = 0, int rvFloat = 0.0) {
+//       this->stackPtr = stackPtr;
+//       this->basePtr = basePtr;
+//       this->instrPtr = instrPtr;
+//       this->rvInt = rvInt;
+//       this->rvFloat = rvFloat;
+//   }
+
+//   // function call
+//   void callFunction(vector<int> intParams, vector<float> floatParams, int returnAddr, int funcAddr);
+
+//   // function setup
+//   void setUpFunction();
+
+//   // saving callee-saved registers
+//   void saveRegs(vector<int> savedVarInt, vector<float> savedVarFloat);
+
+//   // function cleanup
+//   void cleanupFunction(int rvInt = 0, float rvFloat = 0.0);
+
+// };
+
+
+// void RunTimeEnv::callFunction(vector<int> intParams, vector<float> floatParams, int returnAddr, int funcAddr) {
+//     // first create a new activation record frame
+//     ActivationRecord ar;
+
+//     // push params and return address
+//     ar.intParams = intParams;
+//     ar.floatParams = floatParams;
+//     ar.returnAddr = returnAddr;
+
+//     // set the stack pointer to the return address (top of the frame)
+//     Env->stackPtr = returnAddr;
+
+//     // set the instruction pointer
+//     Env->instrPtr = funcAddr;
+
+//     // push the activation record frame onto the stack
+//     Env->controlStack.push(ar);
+
+// }
+
+// void RunTimeEnv::setUpFunction() {
+//     // get the activation frame at the top
+//     ActivationRecord* ar = &Env->controlStack.top();
+
+//     // save the current base pointer
+//     ar->prevBasePointer = Env->basePtr;
+
+//     // set the current base pointer
+//     Env->basePtr = Env->stackPtr;
+// }
+
+// void RunTimeEnv::saveRegs(vector<int> savedVarInt, vector<float> savedVarFloat) {
+//     // get the activation frame at the top
+//     ActivationRecord* ar = &Env->controlStack.top();
+
+//     ar->savedVarInt = savedVarInt;
+//     ar->savedVarFloat = savedVarFloat;
+// }
+
+// void RunTimeEnv::cleanupFunction(int rvInt, float rvFloat) {
+//     // get the activation frame at the top
+//     ActivationRecord* ar = &Env->controlStack.top();
+
+//     // save the return values
+//     Env->rvInt = rvInt;
+//     Env->rvFloat = rvFloat;
+
+//     // yet to complete
+// }
+
+---------------------------------------------------------- "IGNORE SECTION" ----------------------------------------------------------
+
+
+Register Allocation:
+
+0) Se that registers are to be used for which task (heuristics)
+1) Keep note of the used registers and also the variables they are storing.
+2) In case of collision (where it is not possible to allocate a register without freeing one)
+     -> Fix a register allocation and deallocation scheme
+     -> Code generation for the case of spilling of registers and allocation of new ones.
+3) Implement a function -
+     - update() => To inform allocation algorithm that all local variables should be copied on stack (especially when a function is called)
+     - flush() => When a function block finishes - Information about local variables in no more useful so remove them

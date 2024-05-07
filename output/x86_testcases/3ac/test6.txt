@@ -1,0 +1,91 @@
+_Z13calculate_sumiiiiiii:
+.LFB0:
+	beginfunc
+	a = popparam
+	g = popparam
+	$t1 = a + b
+	$t2 = $t1 + c
+	$t3 = $t2 + d
+	$t4 = $t3 + e
+	$t5 = $t4 + f
+	$t6 = $t5 + g
+	paramret $t6
+	return
+	endfunc
+	
+_Z4mainv:
+.LFB1:
+	beginfunc
+	array = [ 1  , 2 , 3 , 4 , 5 , 6 , 7 ]
+	$t7 = "The value of 3rd number in array is: "
+	param $t7
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param array[2]
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	array[2] = 10
+	array[2] = array[2]
+	$t8 = "New value of 3rd number in array is: "
+	param $t8
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param array[2]
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t9 = 0
+	param $t9
+	stackpointer +xxx
+		call calculate_sum,1
+	stackpointer -yyy
+	$t10 = popparam
+	sum_fixed = $t10
+	$t11 = "Sum of first 7 whole numbers is: "
+	param $t11
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param sum_fixed
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t12 = array[0]
+	param $t12
+	stackpointer +xxx
+		call calculate_sum,1
+	stackpointer -yyy
+	$t13 = popparam
+	sum = $t13
+	$t14 = "Sum of array is: "
+	param $t14
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param sum
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	return
+	endfunc
+	
+main:
+.LFB2:
+	beginfunc
+	goto .L0
+.L0:
+	goto .L1
+.L1::
+.L2:
+	stackpointer +xxx
+		call main,0
+	stackpointer -yyy
+.L3:
+.L4:
+	return
+	endfunc
+	
+

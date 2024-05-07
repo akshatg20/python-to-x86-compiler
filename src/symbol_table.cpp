@@ -44,11 +44,17 @@ unordered_map<int,TypeExpression*> numToType;    // hashes each unique type numb
 int SYMBOL_TABLE_DEBUG_INSIDE_VERBOSE = 0;
 int SYMBOL_TABLE_DEBUG_OUTSIDE_VERBOSE = 0;
 
+unordered_map<string, SymbolTable*> labelMap;     // hashes each unique label to its corresponding symbol table
+int if_counter = 0;
+int debug_st = 0;
+
 string getLexemeName(string str, char delim);
 string generateKey(string lexeme, string encoding = "");
 int deleteEntry(string key);
 int deleteEntryScope(string key);
 STentry* lookupScope(string lexeme, TypeExpression* T = NULL);
+int fillRecord(STentry* entry, SymbolTable* table);
+int fillGlobalRecord(SymbolTable* table);
 
 /*********************************** DATA STORAGE ELEMENTS ********************************************************/
 
@@ -58,6 +64,7 @@ STentry* lookupScope(string lexeme, TypeExpression* T = NULL);
 STentry::STentry() {
     this->symbol_type = NULL;
     this->scope_level = this->offset = 0;
+    this->tablePtr = NULL;
     return;
 }
 
@@ -70,6 +77,7 @@ STentry::STentry(string lexeme, TypeExpression* type, int lineno, int scope, str
     this->token = token;
     this->srcfilepath = inputfile_path;
     this->column = column;
+    this->tablePtr = NULL;
 
     // if entry is for a function
     if(type != NULL && type->type == TYPE_FUNC) {
@@ -109,6 +117,10 @@ SymbolTable::SymbolTable() {
     this->parent = NULL;
     this->type = GLOBAL_SCOPE;
     this->name = "GLOBAL";
+    this->funcRecord = new ActivationRecord();
+    children = vector<SymbolTable*>();
+    hashTable = unordered_map<string, STentry>();
+    return;
 }
 
 // Constructor
@@ -116,6 +128,10 @@ SymbolTable::SymbolTable(SymbolTable* parent, int flag, string name) {
     this->parent = parent;
     this->type = flag;
     this->name = name;
+    this->funcRecord = new ActivationRecord();
+    children = vector<SymbolTable*>();
+    hashTable = unordered_map<string, STentry>();
+    return;
 }
 
 // function to dump the symbol table onto an external file
@@ -162,20 +178,21 @@ TypeExpression::TypeExpression() {
     number = -1;
     class_flag = 0;
     encode = "UNDEFINED";
+    mangle = "u";
     name = "";
     lexeme = NULL;
     array = domain = range = user_defined = NULL;
-    inheritance = fields = vector<TypeExpression*>();
+    inheritance = fields = deque<TypeExpression*>();
     return;
 }
 
 TypeExpression::TypeExpression (
     int tp,
     int num,
-    vector<TypeExpression*> fields_arr,
+    deque<TypeExpression*> fields_arr,
     int size,
     int flag,
-    vector<TypeExpression*> inherit
+    deque<TypeExpression*> inherit
 ) {
     
     if(tp < 0) {
@@ -192,10 +209,11 @@ TypeExpression::TypeExpression (
             number = -1;
             class_flag = 0;
             encode = "INTEGER";
+            mangle = "i";
             name = "";
             lexeme = NULL;
             array = domain = range = user_defined = NULL;
-            inheritance = fields = vector<TypeExpression*>();
+            inheritance = fields = deque<TypeExpression*>();
             break;
         }
         
@@ -205,10 +223,11 @@ TypeExpression::TypeExpression (
             number = -1;
             class_flag = 0;
             encode = "FLOATING-POINT";
+            mangle = "f";
             name = "";
             lexeme = NULL;
             array = domain = range = user_defined = NULL;
-            inheritance = fields = vector<TypeExpression*>();
+            inheritance = fields = deque<TypeExpression*>();
             break;
         }
         
@@ -224,10 +243,11 @@ TypeExpression::TypeExpression (
             number = -1;
             class_flag = 0;
             encode = "STRING";
+            mangle = "s";
             name = "";
             lexeme = NULL;
             array = domain = range = user_defined = NULL;
-            inheritance = fields = vector<TypeExpression*>();
+            inheritance = fields = deque<TypeExpression*>();
             break;
         }
         
@@ -237,10 +257,11 @@ TypeExpression::TypeExpression (
             number = -1;
             class_flag = 0;
             encode = "BOOLEAN";
+            mangle = "b";
             name = "";
             lexeme = NULL;
             array = domain = range = user_defined = NULL;
-            inheritance = fields = vector<TypeExpression*>();
+            inheritance = fields = deque<TypeExpression*>();
             break;
         }
 
@@ -252,10 +273,11 @@ TypeExpression::TypeExpression (
             number = -1;
             class_flag = 0;
             encode = "NONE";
+            mangle = "v";
             name = "";
             lexeme = NULL;
             array = domain = range = user_defined = NULL;
-            inheritance = fields = vector<TypeExpression*>();
+            inheritance = fields = deque<TypeExpression*>();
             break;
         }
         
@@ -268,8 +290,8 @@ TypeExpression::TypeExpression (
         case TYPE_ARRAY:  {
             if(num < 0) {
                 // This is an erreneous case which should not occur
-                if(SYMBOL_TABLE_DEBUG_OUTSIDE_VERBOSE) printf("[TYPING ERROR]: Error in Array Declaration\n");
-                return;
+                // However, this may denote a simple not known case in array sizes
+                if(SYMBOL_TABLE_DEBUG_OUTSIDE_VERBOSE) printf("[TYPING ERROR]: Negative size or unknown size array Declaration\n");
             }
             if(fields_arr.size() == 0) {
                 // This is an erreneous case which should not occur
@@ -283,10 +305,11 @@ TypeExpression::TypeExpression (
             number = num;
             class_flag = 0;
             encode = "ARRAY(" + to_string(num) + string(";") + (array->encode) + string(")");
+            mangle = "P" + (array->mangle);
             name = "";
             lexeme = NULL;
             domain = range = user_defined = NULL;
-            inheritance = fields = vector<TypeExpression*>();
+            inheritance = fields = deque<TypeExpression*>();
             break;
         }
 
@@ -304,10 +327,11 @@ TypeExpression::TypeExpression (
             number = -1;
             class_flag = 0;
             encode = "FUNCTION(" + (domain->encode) + string("->") + (range->encode) + string(")");
+            mangle = "F" + (domain->mangle) + "F" + (range->mangle) + "F";
             name = "";
             lexeme = NULL;
             array = user_defined = NULL;
-            inheritance = fields = vector<TypeExpression*>();
+            inheritance = fields = deque<TypeExpression*>();
             break;
         }
         
@@ -317,11 +341,12 @@ TypeExpression::TypeExpression (
             space = 0;
             for(int i=0; i<fields.size(); i++) space += (fields[i]->space);
             number = -1;
-            if(fields.size() == 0) encode = "RECORD()";
+            if(fields.size() == 0) { encode = "RECORD()"; mangle = ""; }
             else {
                 encode = "RECORD(" + (fields[0]->encode);
                 for(int i=1; i<fields.size(); i++) encode += (string(";") + (fields[i]->encode));
                 encode += string(")");
+                mangle += (fields[0]->mangle);
             }
             name = "";
             lexeme = NULL;
@@ -347,14 +372,17 @@ TypeExpression::TypeExpression (
             number = -1;
             class_flag = 0;
             encode = (user->name);
+            mangle = (user->mangle);
             name = "";
             lexeme = NULL;
             array = domain = range = NULL;
             user_defined = user;
-            inheritance = fields = vector<TypeExpression*>();
+            inheritance = fields = deque<TypeExpression*>();
             break;
         }
     }
+
+    if(space < 0) space = 0;
 
     return;
 }
@@ -388,7 +416,7 @@ int TypeExpression::same_type(TypeExpression* T) {
         }
         else if(T->type != type) return 0;
         else if(type == TYPE_ARRAY) {
-            if(number == T->number) return type_check(array, T->array);
+            if(number == T->number || number == -1 || T->number == -1) return type_check(array, T->array);
             else return 0;
         }
         else if(type == TYPE_FUNC) {
@@ -427,6 +455,39 @@ int TypeExpression::same_type(TypeExpression* T) {
 
 // All functions that you have declared should go here.
 
+// This function is used for rectification of details inside the Type of a lexeme if they are not already updated
+void rectify_type(TypeExpression* T) {
+    // Rectification of encoding of the type T is implemented
+    if(T->type == TYPE_BOOL) T->encode = "BOOLEAN";
+    else if(T->type == TYPE_FLOAT) T->encode = "FLOATING_POINT";
+    else if(T->type == TYPE_INT) T->encode = "INTEGER";
+    else if(T->type == TYPE_STR) T->encode = "STRING";
+    else if(T->type == TYPE_VOID) T->encode = "NONE";
+    else if(T->type == TYPE_UNDF) T->encode = "UNDEFINED";
+    else if(T->type == TYPE_ARRAY) {
+        rectify_type(T->array);
+        T->encode = "ARRAY(" + to_string(T->number) + string(";") + (T->array->encode) + string(")");
+    }
+    else if(T->type == TYPE_FUNC) {
+        rectify_type(T->domain);
+        rectify_type(T->range);
+        T->encode = "FUNCTION(" + (T->domain->encode) + string("->") + (T->range->encode) + string(")");
+    }
+    else if(T->type == TYPE_RECORD) {
+        for(int i=0; i<(T->fields).size(); i++) rectify_type((T->fields)[i]);
+        if((T->fields).size() == 0) (T->encode) = "RECORD()";
+        else {
+            T->encode = "RECORD(" + (T->fields[0]->encode);
+            for(int i=1; i<(T->fields).size(); i++) (T->encode) += (string(";") + ((T->fields)[i]->encode));
+            (T->encode) += string(")");
+        }
+    }
+    else {
+        // This is the case of user defined types - Left for now - Maybe used for classes operation
+    }
+    return;
+}
+
 // utility function to extract the name out of the lexeme, for eg. if lexeme = funcName$int$ , return just "funcName"
 string getLexemeName(string str, char delim) {
     size_t pos = str.find(delim);
@@ -441,9 +502,18 @@ string generateKey(string lexeme, string encoding) {
     return lexeme + "$" + encoding;
 }
 
+// Extract the name of a function (or other entity) from key generated from "generateKey"
+string extract_name(string key) {
+    string name = "";
+    for(int i=0;i<key.length();i++) {
+        if(key[i]=='$') break;
+        name.push_back(key[i]);
+    }
+    return name;
+}
+
 // function to lookup entry in the symbol table, assumed that proper key is passed
 STentry* lookup(string lexeme, TypeExpression* T) {
-
     // generate key
     string key = lexeme;
     if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme,T->encode);
@@ -464,6 +534,37 @@ STentry* lookup(string lexeme, TypeExpression* T) {
     return res;
 }
 
+// function to lookup entry in the symbol table, assumed that proper key is passed
+// This is only called for functions and looks up only the domain part of the function.
+STentry* lookup_restricted(string lexeme, TypeExpression* T) {
+    // This works only for function types
+    if(T == NULL || T->type != TYPE_FUNC) return NULL;
+
+    STentry* res = NULL;
+    SymbolTable* temp = currTable;
+    // keep looking for entry till we reach the global symbol table
+    while(temp != NULL) {
+        // if entry is found, return entry
+        unordered_map<string, STentry>::iterator it;
+        for(it = (temp->hashTable).begin(); it != (temp->hashTable).end(); it++) {
+            string name = extract_name(it->first);
+            if(name != lexeme) continue;
+            TypeExpression* type = (it->second).symbol_type;
+            if(type->type != TYPE_FUNC) continue;
+            else {
+                int flag = type_check(T->domain, type->domain);
+                if(flag == 1) {
+                    res = &(it->second);
+                    break;
+                }
+            }
+        }
+        temp = temp->parent;
+    }
+
+    return res;
+}
+
 // function to lookup in scope
 STentry* lookupScope(string lexeme, TypeExpression* T) {
 
@@ -479,33 +580,64 @@ STentry* lookupScope(string lexeme, TypeExpression* T) {
 }
 
 // function to increment scope
-void incr_scope(int scope_flag, string lexeme, TypeExpression* T) {
+int incr_scope(int scope_flag, string lexeme, TypeExpression* T) {
     // increment the scope level
     current_scope++;
     string key = lexeme;
+    // cout << "here\n";
     if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme,T->encode);
 
     // create a new symbol table
+    // cout << "here\n";
     SymbolTable* newTable = new SymbolTable(currTable,scope_flag,key);
 
+    // assign this pointer to the function entry in the orginal symbol table
+    // this step is only to be done for cases of functions and classes
+    if(scope_flag == FUNC_SCOPE || scope_flag == CLASS_SCOPE) {
+        STentry* entry = lookup(lexeme,T);
+        if(entry == NULL) {
+            // This is a case of error and this should not occur.
+            // However, due to the details of the implementation this can occur in case of classes
+            if(scope_flag == FUNC_SCOPE) {
+                // cout << "Okay so basically the entry is not found\n";
+                ErrorMsg->error_type = ERR_NOT_FOUND;
+                ErrorMsg->lineno = yylineno;
+                if(scope_flag == FUNC_SCOPE) ErrorMsg->msg = "Function " + lexeme + " is not defined in this scope.";
+                else ErrorMsg->msg = "Class " + lexeme + " is not defined in this scope.";
+                return -1;
+            }
+        }
+        else entry->tablePtr = newTable;
+    }
+
     // make the parent and child connections
+    // cout << "here\n";
     currTable->children.push_back(newTable);
     newTable->parent = currTable;
 
     // now point the currTable pointer to this newly created table
+    // cout << "done\n";
     currTable = newTable;
+    return 0;
 }
 
 // function to decrement scope
-void decr_scope() {
+int decr_scope() {
     // decrement the scope level
     current_scope--;
 
     // point the *currTable pointer to the parent of the current node
     if(currTable != NULL)
         currTable = currTable->parent;
-    else 
-        printf("[SYMBOL_TABLE_ERROR]: current symbol table is NULL\n");
+    else {
+        // An empty currTable is a critical memory error
+        ErrorMsg->error_type = ERR_UNDF;
+        ErrorMsg->lineno = yylineno;
+        ErrorMsg->msg = "Current symbol table not found.\n";
+        return -1;
+    }
+
+    return 0;
 }
 
 // function to delete entry
@@ -623,13 +755,31 @@ int type_scope_check(TypeExpression* T) {
     return -1; // Control should never reach here
 }
 
-STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag) {
+// Whenever a new entry is to be added to the current symbol table - This function is called.
+// Please take the source file path from "extern char* inputfile_path" which is defined in "main.cpp" -> And store in SymbolTable
+// The "lexeme" stores the complete declared NAME and should be added appropriately in a STentry.
+// FEATURES TO SUPPORT -
+// Function Overloading - If added entry is a function with same "lexeme" but different type then it is allowed.
+//                        In such cases the passed type T will be helpful to check whether the function can be added.
+// Function Overriding - NOT IMPLEMENTED => Do we have to implement this ?
+// Class Inheritance - If added "lexeme" is a class then it can inherit from a parent.
+//                     In such cases vector<TypeExpression*> inherit in T can be useful.
+// Variable Overloading - Is not allowed. In such cases the variable defined later will take over.
+//                        The previous declaration of the same "lexeme" will be deleted from Symbol Table of current scope.
+// Class Overloading - Is also not allowed and will be treated like variable overloading only.
+// Variable Overloading will generate warning - Please update the value of flag to 1 in this case. Fill SemanticError appropriately.
+// Class Overloading will generate warning - Please update the value of flag to 2 in this case. Fill SemanticError appropriately.
+// In case of no error return the pointer to symbol table entry generated and keep value of flag as 0.
+// In case of any error return NULL and fill SemanticError appropriately. In this case value of flag is irrelevant.
+STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table = NULL) {
+    rectify_type(T);
     string key = lexeme;
     if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme,T->encode);
-
+    // cout << key << endl;
     STentry* entry = lookupScope(key,T);
     // if it is a new entry
     if(entry == NULL) {
+        // cout << "new entry";
         *flag = 0;
     }
     // if entry already exists
@@ -664,27 +814,53 @@ STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int 
     // add new entry
     STentry* newEntry = new STentry(lexeme, T, lineno, current_scope, token, column);
     // add this entry to the current symbol table
-    currTable->hashTable[lexeme] = *newEntry;
+    currTable->hashTable[key] = *newEntry;
+
+    // set the Symboltable pointer
+    table = currTable;
 
     // return pointer to the entry
     return newEntry;
+}
+
+// "add" function to be finally used in "parse.y"
+// This function is made because the TypeExpression needs to store a pointer to the lexeme it points to
+// But this pointer can be available only after adding the lexeme to Symbol Table. So, "lexeme" field
+// of TypeExpression is changed after adding the entry to Symbol Table.
+STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table) {
+    STentry* entry = ST_add(lexeme, token, T, lineno, column, flag, table);
+    T->lexeme = (&(entry->lexeme));
+    if(entry != NULL) {
+        // cout << "Symbol table entry is added which is NOT NULL" << "\n";
+        // cout << "Entry is for " << lexeme << " with encoding " << T->encode << " in symbol table named " << currTable->name << "\n";
+        // cout << "Entry is space " << (T->space) << "\n";
+    }
+    // else cout << "Symbol table entry is added which is NULL" << "\n";
+    return entry;
 }
 
 int compute_offsets(SymbolTable* table, int offset) {
     
     // go through each entry in this table
     unordered_map<string,STentry>::iterator it;
-    unordered_map<string,STentry> currHashTable = table->hashTable;
-    for(it = currHashTable.begin(); it != currHashTable.end(); it++) {
+
+    if(debug_st) cout << "Offsets being calculated for " << table->name << " table" << endl;
+
+    for(it = (table->hashTable).begin(); it != (table->hashTable).end(); it++) {
 
         // get the current entry
         STentry* entry = &(it->second);
 
+        if(debug_st) cout << "variable = " << entry->lexeme << "  size = " << entry->symbol_type->space << endl;
+
+        // update the offset
+        if(entry->symbol_type->type == TYPE_ARRAY) entry->symbol_type->space += 4;
+        offset += entry->symbol_type->space;
+
         // set the offset for the entry
         entry->offset = offset;
 
-        // update the offset
-        offset += entry->symbol_type->space;
+        if(debug_st) cout << "offset = " << entry->offset << endl;
     }
 
     // now go through the children of this symbol table
@@ -700,14 +876,19 @@ int compute_offsets(SymbolTable* table, int offset) {
     return offset;
 }
 
+
 // function to print symbol tables for all functions and classes
 void dumpAllSTs(string DirPath, SymbolTable* table) {
 
     // print the current symbol table, if it is a function or a class
-    if(table->type == FUNC_SCOPE || table->type == CLASS_SCOPE || table->type == GLOBAL_SCOPE) {
+    if(table->type == FUNC_SCOPE || table->type == CLASS_SCOPE || table->type == GLOBAL_SCOPE || table->type == OTHER_SCOPE) {
 
         // create file path
-        string filePath = DirPath + "/" + table->name + "_symbol_table.csv";
+        string filePath;
+        if(table->type == OTHER_SCOPE)
+            filePath = DirPath + "/" + table->name + to_string(if_counter++) + "_symbol_table.csv";
+        else
+            filePath = DirPath + "/" + table->name + "_symbol_table.csv";
         char* path = const_cast<char*> (filePath.c_str());
 
         // Open the file for writing
@@ -732,6 +913,127 @@ void dumpAllSTs(string DirPath, SymbolTable* table) {
         // call dump function recursively
         dumpAllSTs(DirPath, *it);
     }
+}
+
+// function to fill activation records of all functions
+int fillActivationRecords(SymbolTable* table) {
+
+    // if(debug_st) cout << "fillACtivationRecords() called\n";
+
+    if(table->type == GLOBAL_SCOPE) {
+        fillGlobalRecord(table);
+    }
+
+    unordered_map<string,STentry>::iterator it;
+
+    for(it = (table->hashTable).begin(); it != (table->hashTable).end(); it++) {
+        int type = it->second.symbol_type->type;
+        STentry* currEntry = &it->second;
+        if(type == TYPE_FUNC) {
+            fillRecord(currEntry,it->second.tablePtr);
+        }
+    }
+
+    vector<SymbolTable*>::iterator it2;
+    for(it2 = table->children.begin(); it2 != table->children.end(); it2++) {
+        fillActivationRecords(*it2);
+    }
+
+    return 0;
+}
+
+int fillGlobalRecord(SymbolTable* table) {
+    int numVars = 0;
+    int sizeVars = 0;
+
+    ActivationRecord* ar = table->funcRecord;
+    if(debug_st) cout << "Activation Record being filled for " << table->name << endl;
+
+    int offset = 0;
+    string varName = "";
+
+    unordered_map<string,STentry>::iterator it;
+    
+    for(it = (table->hashTable).begin(); it != (table->hashTable).end(); it++) {
+        numVars++;
+        STentry* entry = &(it->second);
+        offset = entry->offset;
+        varName = entry->lexeme;
+        ar->tempVars[varName] = offset;
+        sizeVars = offset;
+
+        if(debug_st) cout << "variable " << varName << " filled at offset " << ar->tempVars[varName] << endl;
+    }
+    ar->numVars = numVars;
+    ar->sizeVars = sizeVars;
+
+    if(debug_st) cout << "number of variables " << ar->numVars << " and size of func stack = " << ar->sizeVars << endl;
+
+    ar->stackMemAlloc = sizeVars;
+
+    return sizeVars;
+
+}
+
+// function to fill activation record for one function
+int fillRecord(STentry* entry, SymbolTable* table) {
+    int numParams = 0;
+    int numVars = 0;
+    int sizeVars = 0;
+    int sizeParams = 0;
+
+    // get the activation record
+    ActivationRecord* ar = table->funcRecord;
+
+    // get the offset of the variables defined inside this symbol table
+
+    if(debug_st) cout << "Activation Record being filled for " << table->name << endl;
+
+    unordered_map<string,STentry>::iterator it;
+
+    int offset = 0;
+    string varName = "";
+    for(it = (table->hashTable).begin(); it != (table->hashTable).end(); it++) {
+        numVars++;
+        STentry* entry = &(it->second);
+        offset = entry->offset;
+        varName = entry->lexeme;
+        ar->tempVars[varName] = offset;
+        sizeVars = offset;
+
+        if(debug_st) cout << "variable " << varName << " filled at offset " << ar->tempVars[varName] << endl;
+    }
+    ar->numVars = numVars;
+    ar->sizeVars = sizeVars;
+
+    if(debug_st) cout << "number of variables " << ar->numVars << " and size of func stack = " << ar->sizeVars << endl;
+
+    // get the parameters of the function, which will be a record of other type expressions
+    TypeExpression* params = entry->symbol_type->domain;
+    TypeExpression* tparam = NULL;
+    deque<TypeExpression*>::iterator it1;
+    string paramName = "";
+    for(it1 = params->fields.begin(); it1 != params->fields.end(); it1++) {
+        numParams++;
+        tparam = *it1;
+        offset += tparam->space;
+        sizeParams += tparam->space;
+        ar->params.push_back(offset);
+    }
+    ar->numParams = numParams;
+    ar->sizeParams = sizeParams;
+
+    // iterate over the subtree of this function symbol table
+    vector<SymbolTable*>::iterator it2;
+    for(it2 = table->children.begin(); it2 != table->children.end(); it2++) {
+        int type = (*it2)->type;
+        if(type != FUNC_SCOPE)
+            sizeParams += fillGlobalRecord(*it2);
+            ar->sizeParams = sizeParams;
+    }
+
+    ar->stackMemAlloc = sizeVars + sizeParams;
+    return ar->stackMemAlloc;
 }
 
 int type_check(TypeExpression* T1, TypeExpression* T2) {
@@ -767,7 +1069,7 @@ TypeExpression* type_float() {
 TypeExpression* type_str(int size) {
     int type = TYPE_STR;
     int number = -1;
-    vector<TypeExpression*> fields = vector<TypeExpression*>();
+    deque<TypeExpression*> fields = deque<TypeExpression*>();
     TypeExpression* ptr = new TypeExpression(type, number, fields, size);
     return ptr;
 }
@@ -781,13 +1083,13 @@ TypeExpression* type_void() {
 
 TypeExpression* type_array(int number, TypeExpression* array) {
     int type = TYPE_ARRAY;
-    vector<TypeExpression*> fields;
+    deque<TypeExpression*> fields;
     fields.push_back(array);
     TypeExpression* ptr = new TypeExpression(type, number, fields);
     return ptr;
 }
 
-TypeExpression* type_record(vector<TypeExpression*> fields, int flag, vector<TypeExpression*> inherit) {
+TypeExpression* type_record(deque<TypeExpression*> fields, int flag, deque<TypeExpression*> inherit) {
     int type = TYPE_RECORD;
     int number = -1;
     TypeExpression* ptr = new TypeExpression(type, number, fields, 0, flag, inherit);
@@ -798,7 +1100,7 @@ TypeExpression* type_function(TypeExpression* domain, TypeExpression* range) {
     int type = TYPE_FUNC;
     // cout << "func";
     int number = -1;
-    vector<TypeExpression*> fields;
+    deque<TypeExpression*> fields;
     fields.push_back(domain);
     fields.push_back(range);
     // cout << fields.size() << endl;

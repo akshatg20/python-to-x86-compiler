@@ -1,0 +1,208 @@
+_Z3addii:
+.LFB0:
+	beginfunc
+	x = popparam
+	y = popparam
+	$t1 = x + y
+	ans = $t1
+	paramret ans
+	return
+	endfunc
+	
+_Z8subtractii:
+.LFB1:
+	beginfunc
+	x = popparam
+	y = popparam
+	$t2 = x - y
+	ans = $t2
+	paramret ans
+	return
+	endfunc
+	
+_Z8multiplyii:
+.LFB2:
+	beginfunc
+	x = popparam
+	y = popparam
+	$t3 = x * y
+	ans = $t3
+	paramret ans
+	return
+	endfunc
+	
+_Z6divideii:
+.LFB3:
+	beginfunc
+	x = popparam
+	y = popparam
+	ans = 0
+	$t4 = y != 0
+	ifFalse $t4 goto .L4
+.L3:
+	$t5 = x / y
+	ans = $t5
+	ans = ans
+.L4:
+.L5:
+	$t6 = "Error: Cannot divide by zero."
+	param $t6
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	paramret ans
+	return
+	endfunc
+	
+_Z10relationalii:
+.LFB4:
+	beginfunc
+	x = popparam
+	y = popparam
+	$t7 = x == y
+	ans = $t7
+	paramret ans
+	return
+	endfunc
+	
+_Z10assignmentii:
+.LFB5:
+	beginfunc
+	x = popparam
+	y = popparam
+	$t8 = x | y
+	x = $t8
+	ans = x
+	paramret ans
+	return
+	endfunc
+	
+_Z4mainv:
+.LFB6:
+	beginfunc
+	$t10 = 10
+	param $t10
+	stackpointer +xxx
+		call add,1
+	stackpointer -yyy
+	$t11 = popparam
+	result_add = $t11
+	$t12 = "Result of Addition: "
+	param $t12
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param result_add
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t13 = 10
+	param $t13
+	stackpointer +xxx
+		call subtract,1
+	stackpointer -yyy
+	$t14 = popparam
+	result_subtract = $t14
+	$t15 = "Result of Subtraction: "
+	param $t15
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param result_subtract
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t16 = 10
+	param $t16
+	stackpointer +xxx
+		call multiply,1
+	stackpointer -yyy
+	$t17 = popparam
+	result_multiply = $t17
+	$t18 = "Result of Multiplication: "
+	param $t18
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param result_multiply
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t19 = 10
+	param $t19
+	stackpointer +xxx
+		call divide,1
+	stackpointer -yyy
+	$t20 = popparam
+	result_divide = $t20
+	$t21 = "Result of Division: "
+	param $t21
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param result_divide
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t22 = 10
+	param $t22
+	stackpointer +xxx
+		call relational,1
+	stackpointer -yyy
+	$t23 = popparam
+	result_relational = $t23
+	$t24 = "Result of Relational Operation: "
+	param $t24
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param result_relational
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	$t25 = 10
+	param $t25
+	stackpointer +xxx
+		call assignment,1
+	stackpointer -yyy
+	$t26 = popparam
+	result_assignment = $t26
+	$t27 = "Result of Assignment Operation: "
+	param $t27
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	param result_assignment
+	stackpointer +xxx
+		call print,1
+	stackpointer -yyy
+	return
+	endfunc
+	
+main:
+.LFB7:
+	beginfunc
+	goto .L0
+.L0:
+	goto .L1
+.L1:
+	goto .L2
+.L2:
+	goto .L6
+.L6:
+	goto .L7
+.L7:
+	goto .L8
+.L8:
+	goto .L9
+.L9::
+.L10:
+	stackpointer +xxx
+		call main,0
+	stackpointer -yyy
+.L11:
+.L12:
+	return
+	endfunc
+	
+

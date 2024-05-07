@@ -31,3 +31,55 @@ So will have to check the code of what is returned when we return in case of wro
 
 > [SEP]
 
+
+
+================================================
+DEBUGGING 3AC
+================================================
+
+
+Assumptions:
+1. Only range iterator is provided as special iterator
+2. print() is not allowed
+3. Function defined below is not allowed to be called below
+4. only single subscript allowed (no slicing) so it multiple will be dumped together
+5. all colon cases in subscript are not allowed
+6. No direct inputs from other files
+7. Assuming that all files have __name__ == "__main__" dunders
+
+
+Done:
+1. All productions added
+2. Delete unnecessary calls to newTemp() and newLabel()
+1. .L
+2. $t
+3. call,_1
+4. func up and down
+4. """ newlines
+6. hardcode __name__ and __main__ dunders
+
+
+LEFT:
+1. name mangling -> devansh + 
+2. labels mapping -> devansh
+3. tfpdef ->
+4. remove removelines, and trailing etc functions
+5. clerar n2c and k2n
+6. sequential code -> try to do away as nexts
+7. evalbool + .name in class
+8. Additional return out of function in else
+9. Remove empty gotos
+10. Remove newlines and filter functions cause issues with multiline strings
+11. a=b+c, add spaces everywhere
+12. funcdef.2
+13. factor.1/2/3/4
+14. len(array)
+
+
+
+
+
+
+
+
+class stack name
