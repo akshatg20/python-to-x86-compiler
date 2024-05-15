@@ -56,6 +56,6 @@ Error dumping during the compilation process
 
 Group Number - 10
 Group Members
-Akshat Gupta (200085)
-Devansh Kumar Jha (200318)
-Shashwat Gupta (200923)
+Akshat Gupta (200085) \\
+Devansh Kumar Jha (200318) \\
+Shashwat Gupta (200923) \\

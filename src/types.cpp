@@ -214,9 +214,13 @@ void semantic_error_type(
 // This function returns Type in case of correct types NULL in case of error.
 // A limited implicit type casting is implemented here however this is not as required as such.
 TypeExpression* type_checking_unary(string optr, ASTNode* operand) {
+    // Check if any of the types to be considered is a RECORD of a single field. That can be casted into a single simple type as well.
+    TypeExpression *T = operand->T;
+    while(T->type == TYPE_RECORD && (T->fields).size() == 1) T = (T->fields)[0];
+    
     // Basic binary operations are not supported on any other types
     // except the 4 basic types of INT, FLOAT, BOOL and STRING
-    int type = operand->T->type;
+    int type = T->type;
     if(type != TYPE_INT && type != TYPE_FLOAT && type != TYPE_BOOL && type != TYPE_STR) {
         // TYPE ERROR SHOULD BE RETURNED
         semantic_error_type(operand, optr);
@@ -287,8 +291,12 @@ TypeExpression* type_checking_unary(string optr, ASTNode* operand) {
 // This function returns Type in case of correct types NULL in case of error.
 // A limited implicit type casting is implemented here however this is not as required as such.
 TypeExpression* type_checking_binary(ASTNode* operand1, string optr, ASTNode* operand2) {
-    int type1 = operand1->T->type, type2 = operand2->T->type;
-
+    // Check if any of the types to be considered is a RECORD of a single field. That can be casted into a single simple type as well.
+    TypeExpression *T1 = operand1->T, *T2 = operand2->T;
+    while(T1->type == TYPE_RECORD && (T1->fields).size() == 1) T1 = (T1->fields)[0];
+    while(T2->type == TYPE_RECORD && (T2->fields).size() == 1) T2 = (T2->fields)[0];
+    
+    int type1 = T1->type, type2 = T2->type;
     if(type1 == TYPE_VOID && type2 == TYPE_VOID) return type_void();
 
     // Case of comparison operators
@@ -348,7 +356,6 @@ TypeExpression* type_checking_binary(ASTNode* operand1, string optr, ASTNode* op
         optr == "<<=" || optr == ">>="
     )
     {
-        // // cout << "here\n";
         if(type1 == type2) {
             if(type1 == TYPE_STR && type2 == TYPE_STR) {
                 // MINOR SUPPORT PROVIDED FOR STRING OPERATIONS
@@ -432,7 +439,6 @@ TypeExpression* type_checking_binary(ASTNode* operand1, string optr, ASTNode* op
         optr == "<<" || optr == ">>"
     )
     {
-        // // cout << "here\n";
         if(type2 == TYPE_STR || type2 == TYPE_FLOAT) {
             // TYPE ERROR SHOULD BE RETURNED
             semantic_error_type(operand1, optr, operand2);
@@ -489,7 +495,6 @@ TypeExpression* type_checking_binary(ASTNode* operand1, string optr, ASTNode* op
         optr == "is-not" || optr == "is" // These come under comp_op non terminal
     )
     {
-        // // cout << "here\n";
         if(type1 == type2) return type_bool();
         else {
             // Implicit type casting cases
@@ -610,17 +615,20 @@ string collect_terminals(ASTNode* root) {
 }
 
 TypeExpression* number_type(string input) {
-    string integer = "(\\d+|0[bB][01]+|0[oO][0-7]+|0[xX][0-9a-fA-F]+)";
-    string floatnumber = "((\\d+(_?\\d+)*\\.\\d*|\\d*\\.\\d+(_?\\d+)*)[eE][+-]?\\d+|\\d+(_?\\d+)*\\.\\d+(_?\\d+)*|\\.\\d+(_?\\d+)*)";
-    string imagnumber = "(" + floatnumber + "|\\d+(_?\\d+)*)([jJ])";
-    regex integerRegex(integer);
-    regex floatRegex(floatnumber);
-    regex imagRegex(imagnumber);
+    const std::regex integerRegex(R"((\b[1-9][0-9]*|0[0-7]*|0[xX][0-9a-fA-F]+|0[bB][01]+)\b)");
+    const std::regex floatRegex(R"(\b(\d+\.\d*|\.\d+|\d+)([eE][-+]?\d+)?\b)");
+    const std::regex imagRegex(R"(\b(\d+\.\d*|\.\d+|\d+)([eE][-+]?\d+)?(j|J)\b)");
     string result;
     smatch matches;
 
-    if (regex_search(input, matches, integerRegex)) return type_int();
-    else if (regex_search(input, matches, floatRegex)) return type_float();
+    if(regex_search(input, matches, integerRegex)) {
+        // cout << "Number identified as integer\n";
+        return type_int();
+    }
+    else if(regex_search(input, matches, floatRegex)) {
+        // cout << "Number identified as floating-point\n";
+        return type_float();
+    }
     else if (regex_search(input, matches, imagRegex)) {
         // Actually such numbers with imaginary values are not supported.
         // We will return integer here to be safe and issue a warning for the same
@@ -645,7 +653,6 @@ TypeExpression* number_type(string input) {
 
 // Set the type and delcarations for the NAME terminal
 int set_name_type(ASTNode* root, string content, int len) {
-    // cout << "HELLO THIS IS IN SET_NAME_TYPE for = " << content << "\n";
     if(content == "__name__") {
         // This is a variable of string type. However, the actual
         // length of the string will be decided by the assignment to it.
@@ -691,6 +698,33 @@ int set_name_type(ASTNode* root, string content, int len) {
         root->T = type_array(-1, undf);
         root->declarations = vector<STentry*>();
     }
+    else if(content == "self") {
+        // If this is a case where "self" keyword is used inside a class then "self" corresponds to an object of that class
+        bool class_flag = class_names_in_type_system.empty();
+        if(class_flag == true) {
+            // A case where "self" is used outside the classes is allowed. It will be a normal variable.
+            root->T = new TypeExpression();
+            root->declarations = vector<STentry*>();
+        }
+        else {
+            // This "self" actually is a reference to a class object.
+            string class_name = class_names_in_type_system.top();
+            STentry* entry = lookup(class_name, NULL);
+            if(entry == NULL) {
+                // This case should not occur this is some internal compilation error.
+                int type = ERR_UNDF;
+                string msg = "Some internal compilation error occured";
+                (ErrorMsg->msg) = "";
+                semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
+                return -1;
+            }
+            else {
+                root->T = entry->symbol_type;
+                root->declarations = vector<STentry*>();
+                // cout << "Identified a self under a class and given a type " << (root->T->encode) << "\n";
+            }
+        }
+    }
     
     // THIS CASE IS INCOMPLETE - CLASS OBJECTS NEED TO BE HANDLED
     // INFACT ANY VARIABLE USED IN THE PROGRAM REQUIRES TO BE HANDLED HERE
@@ -701,9 +735,6 @@ int set_name_type(ASTNode* root, string content, int len) {
         
         // SCOPE CHECKING AND USER DEFINITION REQUIRED HERE
         // Cannot do scope checking at this stage
-        // cout << "lookup started" << "\n";
-        
-        // cout << "Name scope checking is going on for the name: " << content << "\n";
         STentry* entry = lookup(content, NULL);
         if(entry == NULL) {
             // cout << "No such entry is found" << "\n";
@@ -717,7 +748,7 @@ int set_name_type(ASTNode* root, string content, int len) {
         }
     }
 
-    return 0;
+    return 0; // This return denotes no error
 }
 
 int semantic_analysis_recursive(struct ASTNode* root) {
@@ -953,13 +984,9 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 // OPENING_BRACKET typedargslist CLOSING_BRACKET
                 flag = semantic_analysis_recursive((root->children)[1]);
                 if(flag < 0) return flag;
-                // cout << "here\n";
                 root->T = (root->children)[1]->T;
-                // cout << "Type of parameters got inside parameters non-terminal are " << (root->T->encode) << "\n";
                 root->declarations = (root->children)[1]->declarations;
-                // cout << "here\n";
                 root->names = (root->children)[1]->names;
-                // cout << "done and leaving\n";
                 break;
             }
             default: {
@@ -1091,105 +1118,103 @@ int semantic_analysis_recursive(struct ASTNode* root) {
 
     // Semantic analysis for the case of class definition
     if(type == "classdef") {
-        switch((root->children).size()) {
-            case 7: {
-                // CLASS NAME OPENING_BRACKET arglist CLOSING_BRACKET COLON suite
-                class_names_in_type_system.push((root->children)[1]->content);
-                flag = semantic_analysis_recursive((root->children)[3]);
-                if(flag < 0) return flag;
-                string lexeme = (root->children)[1]->content;
-
-                flag = incr_scope(CLASS_SCOPE, lexeme, NULL);
-                if(flag < 0) return flag;
-                flag = semantic_analysis_recursive((root->children)[6]);
-                if(flag < 0) return flag;
-                flag = decr_scope();
-                if(flag < 0) return flag;
-                class_names_in_type_system.pop();
-                (root->table) = (root->children)[6]->table;
-
-                TypeExpression* arglist_type = (root->children)[3]->T;
-                TypeExpression* T = type_record((root->children)[6]->T->fields, 1, arglist_type->fields);
-                
-                STentry* entry = add(lexeme, "CLASS", T, root->lineno, root->columnno, &flag);
-                if(entry == NULL) {
-                    // Some error has occured in the Symbol Table. Handle this in Semantic error handling
-                    string error_message = "Error in class declaration";
-                    semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
-                    return -1;
-                }
-                else if(flag > 0) {
-                    // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
-                    semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
-                }
-                break;
-            }
-            case 6: {
-                // CLASS NAME OPENING_BRACKET CLOSING_BRACKET COLON suite
-                string lexeme = (root->children)[1]->content;
-                class_names_in_type_system.push((root->children)[1]->content);
-
-                flag = incr_scope(CLASS_SCOPE, lexeme, NULL);
-                if(flag < 0) return flag;
-                flag = semantic_analysis_recursive((root->children)[5]);
-                if(flag < 0) return flag;
-                flag = decr_scope();
-                if(flag < 0) return flag;
-                class_names_in_type_system.pop();
-                (root->table) = (root->children)[5]->table;
-
-                TypeExpression* T = type_record((root->children)[5]->T->fields, 1, deque<TypeExpression*>());
-
-                STentry* entry = add(lexeme, "CLASS", T, root->lineno, root->columnno, &flag);
-                if(entry == NULL) {
-                    // Some error has occured in the Symbol Table. Handle this in Semantic error handling
-                    string error_message = "Error in class declaration";
-                    semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
-                    return -1;
-                }
-                else if(flag > 0) {
-                    // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
-                    semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
-                }
-                break;
-            }
-            case 4: {
-                // CLASS NAME COLON suite
-                string lexeme = (root->children)[1]->content;
-                class_names_in_type_system.push((root->children)[1]->content);
-
-                // cout << "here\n";
-                flag = incr_scope(CLASS_SCOPE, lexeme, NULL);
-                if(flag < 0) return flag;
-                // cout << "here\n";
-                flag = semantic_analysis_recursive((root->children)[3]);
-                if(flag < 0) return flag;
-                // cout << "here\n";
-                flag = decr_scope();
-                if(flag < 0) return flag;
-                class_names_in_type_system.pop();
-                (root->table) = (root->children)[3]->table;
-
-                TypeExpression* T = type_record((root->children)[3]->T->fields, 1, deque<TypeExpression*>());
-
-                STentry* entry = add(lexeme, "CLASS", T, root->lineno, root->columnno, &flag);
-                if(entry == NULL) {
-                    // Some error has occured in the Symbol Table. Handle this in Semantic error handling
-                    string error_message = "Error in class declaration";
-                    semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
-                    return -1;
-                }
-                else if(flag > 0) {
-                    // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
-                    semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
-                }
-                break;
-            }
-            default: {
-                // This error should not happen of the parse tree is correctly constructed
-                if(PARSER_DEBUG_INSIDE_VERBOSE) printf("[PARSING ERROR]: Error in parsing process encountered during semantic analysis\n");
+        if(name == "classdef.1") {
+            // CLASS NAME OPENING_BRACKET arglist CLOSING_BRACKET COLON suite
+            class_names_in_type_system.push((root->children)[1]->content);
+            flag = semantic_analysis_recursive((root->children)[3]);
+            if(flag < 0) return flag;
+            TypeExpression* arglist_type = (root->children)[3]->T;
+            string lexeme = (root->children)[1]->content;
+            TypeExpression* T1 = type_record(deque<TypeExpression*>(), 1, arglist_type->fields, lexeme);
+            STentry* entry = add(lexeme, "CLASS", T1, root->lineno, root->columnno, &flag);
+            if(entry == NULL) {
+                // Some error has occured in the Symbol Table. Handle this in Semantic error handling
+                string error_message = "Error in class declaration";
+                semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
                 return -1;
             }
+            else if(flag > 0) {
+                // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
+                semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
+            }
+
+            flag = incr_scope(CLASS_SCOPE, lexeme, NULL);
+            if(flag < 0) return flag;
+            flag = semantic_analysis_recursive((root->children)[6]);
+            if(flag < 0) return flag;
+            flag = decr_scope();
+            if(flag < 0) return flag;
+
+            TypeExpression* T2 = type_record((root->children)[6]->T->fields, 1, arglist_type->fields, lexeme);
+            T2->lexeme = (&(entry->lexeme));
+            entry->symbol_type = T2;
+            class_names_in_type_system.pop();
+            (root->table) = (root->children)[6]->table;
+        }
+        else if(name == "classdef.2") {
+            // CLASS NAME OPENING_BRACKET CLOSING_BRACKET COLON suite
+            string lexeme = (root->children)[1]->content;
+            class_names_in_type_system.push((root->children)[1]->content);
+            TypeExpression* T1 = type_record(deque<TypeExpression*>(), 1, deque<TypeExpression*>(), lexeme);
+            STentry* entry = add(lexeme, "CLASS", T1, root->lineno, root->columnno, &flag);
+            if(entry == NULL) {
+                // Some error has occured in the Symbol Table. Handle this in Semantic error handling
+                string error_message = "Error in class declaration";
+                semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
+                return -1;
+            }
+            else if(flag > 0) {
+                // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
+                semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
+            }
+
+            flag = incr_scope(CLASS_SCOPE, lexeme, NULL);
+            if(flag < 0) return flag;
+            flag = semantic_analysis_recursive((root->children)[5]);
+            if(flag < 0) return flag;
+            flag = decr_scope();
+            if(flag < 0) return flag;
+
+            TypeExpression* T2 = type_record((root->children)[5]->T->fields, 1, deque<TypeExpression*>(), lexeme);
+            T2->lexeme = (&(entry->lexeme));
+            entry->symbol_type = T2;
+            class_names_in_type_system.pop();
+            (root->table) = (root->children)[5]->table;
+        }
+        else if(name == "classdef.3") {
+            // CLASS NAME COLON suite
+            string lexeme = (root->children)[1]->content;
+            class_names_in_type_system.push((root->children)[1]->content);
+            TypeExpression* T1 = type_record(deque<TypeExpression*>(), 1, deque<TypeExpression*>(), lexeme);
+            STentry* entry = add(lexeme, "CLASS", T1, root->lineno, root->columnno, &flag);
+            if(entry == NULL) {
+                // Some error has occured in the Symbol Table. Handle this in Semantic error handling
+                string error_message = "Error in class declaration";
+                semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
+                return -1;
+            }
+            else if(flag > 0) {
+                // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
+                semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
+            }
+
+            flag = incr_scope(CLASS_SCOPE, lexeme, NULL);
+            if(flag < 0) return flag;
+            flag = semantic_analysis_recursive((root->children)[3]);
+            if(flag < 0) return flag;
+            flag = decr_scope();
+            if(flag < 0) return flag;
+
+            TypeExpression* T2 = type_record((root->children)[3]->T->fields, 1, deque<TypeExpression*>(), lexeme);
+            T2->lexeme = (&(entry->lexeme));
+            entry->symbol_type = T2;
+            class_names_in_type_system.pop();
+            (root->table) = (root->children)[3]->table;
+        }
+        else {
+            // This error should not happen of the parse tree is correctly constructed
+            if(PARSER_DEBUG_INSIDE_VERBOSE) printf("[PARSING ERROR]: Error in parsing process encountered during semantic analysis\n");
+            return -1;
         }
     }
 
@@ -2054,8 +2079,10 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // NAME
             string content = (root->children)[0]->content;
             int len = content.length();
-            set_name_type(root, content, len);
+            flag = set_name_type(root, content, len);
+            if(flag < 0) return flag;
             (root->names) = deque<string>(1, content);
+            // cout << "Name found which is " << content << " with type " << (root->T->encode) << "\n";
         }
         else if(name == "atom.8") {
             // NUMBER
@@ -2102,18 +2129,15 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // trailers trailer
             (root->children)[0]->T = (root->T);
             (root->children)[0]->names = (root->names);
+            
             flag = semantic_analysis_recursive((root->children)[0]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << " in trailers " << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
+            
             (root->children)[1]->T = (root->children)[0]->T;
             (root->children)[1]->names = (root->children)[0]->names;
+            
             flag = semantic_analysis_recursive((root->children)[1]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << " in trailer " << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             
             // Type setting for "trailers"
             (root->T) = (root->children)[1]->T;
@@ -2142,10 +2166,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // OPENING_BRACKET arglist CLOSING_BRACKET
             // A function denoted by this trailer
             flag = semantic_analysis_recursive((root->children)[1]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             root->declarations = (root->children)[1]->declarations;            
             
             // First step is to contruct the type of the function being called if it's type is not already known
@@ -2331,10 +2352,36 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         }
         else if(name == "trailer.4") {
             // DOT NAME
-            // A class name denoted by this
-            root->T = type_void();
-            root->declarations = vector<STentry*>();
-            root->content = (root->children)[0]->content + (root->children)[1]->content;
+            // A class utility is called using this trailer. This needs to be handled to support classes in python.
+            
+            // ASSUMPTION - Only classes have a scope resolution functionality and rest all cases will be an error
+            if(root->T->class_flag == 0 && (root->T->type <= 8 && root->T->type >= 0)) {
+                // Something other than a class name and class object is being used for a scope resolution
+                int type = ERR_WRG_USE;
+                string msg = "Scope resolution not supported for type " + (root->T->encode);
+                (ErrorMsg->msg) = "";
+                semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
+                return -1;
+            }
+            else if(root->T->type <= 8 && root->T->type >= 0) {
+                // A class name is being used for scope resolution
+                int type_number = root->T->class_flag;
+                string class_name = (root->names)[0];
+                cout << "We have a class name here " << class_name << "\n";
+            }
+            else if(root->T->class_flag == 0) {
+                // A class object is being used for scope resolution
+                string obj_name = (root->names)[0];
+                cout << "We have a class object here " << obj_name << "\n";
+            }
+            else {
+                // This case should not occur this is some kind of an internal compiler error.
+                int type = ERR_UNDF;
+                string msg = "Some internal compilation error occured";
+                (ErrorMsg->msg) = "";
+                semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
+                return -1;
+            }
         }
         else {
             // This error should not happen of the parse tree is correctly constructed
@@ -2355,10 +2402,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // atom trailers
             // The trailer can actually change the type of the atom
             flag = semantic_analysis_recursive((root->children)[0 + adder_num]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
 
             // Before going to the "trailers" we need to pass the information about what is the type of the "atom"
             // the "trailers" are going to work on.
@@ -2366,23 +2410,18 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             (root->children)[1 + adder_num]->names = (root->children)[0 + adder_num]->names;
 
             flag = semantic_analysis_recursive((root->children)[1 + adder_num]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             
             // Type Setting for "atom_expr"
             // That is done inside the "trailers" and "trailer". Because that is easier.
             root->declarations = vector<STentry*>();
             (root->T) = (root->children)[1 + adder_num]->T;
-            if((root->T) == NULL) cout << "Oh my god the type got in atom_expr is NULL\n";
         }
         else {
             // This error should not happen of the parse tree is correctly constructed
             if(PARSER_DEBUG_INSIDE_VERBOSE) printf("[PARSING ERROR]: Error in parsing process encountered during semantic analysis\n");
             return -1;
         }
-        // cout << "Leaving atom_expr with type " << (root->T->encode) << "\n";
     }
 
     if (type == "power") {
@@ -3115,21 +3154,13 @@ int semantic_analysis_recursive(struct ASTNode* root) {
 
     // Semantic analysis for the case of statements
     if(type == "stmts") {
-        // cout << "stmts called\n";
         switch ((root->children).size()) {
             case 2: {
                 // stmts stmt
                 flag = semantic_analysis_recursive((root->children)[0]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
-                // // cout << "I AM HERE\n";
+                if(flag < 0) return flag;
                 flag = semantic_analysis_recursive((root->children)[1]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+                if(flag < 0) return flag;
                 deque<TypeExpression*> decs = (root->children)[0]->T->fields;
                 decs.push_back((root->children)[1]->T);
                 root->T = type_record(decs);
@@ -3143,10 +3174,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             case 1: {
                 // stmt
                 flag = semantic_analysis_recursive((root->children)[0]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+                if(flag < 0) return flag;
                 root->T = (root->children)[0]->T;
                 root->declarations = (root->children)[0]->declarations;
                 break;
@@ -3157,21 +3185,15 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 return -1;
             }
         }
-        // cout << "stmts exited\n";
     }
 
     // Check the semantic analysis for a statement
     if(type == "stmt") {
-        // cout << "Statement non-terminal called for " << (root->children)[0]->type << "\n";
         if(name == "stmt.1" || name == "stmt.2") {
             // simple_stmt
             // compound_stmt
-            // // cout << "Statement non terminal is called\n";
             flag = semantic_analysis_recursive((root->children)[0]);
-            if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+            if(flag < 0) return flag;
             root->T = (root->children)[0]->T;
             root->declarations = (root->children)[0]->declarations;
         }
@@ -3180,7 +3202,6 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             if(PARSER_DEBUG_INSIDE_VERBOSE) printf("[PARSING ERROR]: Error in parsing process encountered during semantic analysis\n");
             return -1;
         }
-        // cout << "Statement non-terminal exited for " << (root->children)[0]->type << "\n";
     }
 
     // Check the semantic analysis for a simple statement
@@ -3188,16 +3209,10 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         if(name == "simple_stmt.1" || name == "simple_stmt.2") {
             // small_stmt next_small_stmt SEMI_COLON NEWLINE
             flag = semantic_analysis_recursive((root->children)[0]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             (root->children)[1]->T = (root->children)[0]->T;
             flag = semantic_analysis_recursive((root->children)[1]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             root->T = (root->children)[1]->T;
             root->declarations = (root->children)[0]->declarations;
             (root->declarations).insert(
@@ -3218,10 +3233,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             name == "compound_stmt.4" || name == "compound_stmt.5" || name == "compound_stmt.6"
         ) {
             flag = semantic_analysis_recursive((root->children)[0]);
-            if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+            if(flag < 0) return flag;
             root->T = (root->children)[0]->T;
             root->declarations = (root->children)[0]->declarations;
         }
@@ -3236,10 +3248,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
     if(type == "small_stmt") {
         if(name == "small_stmt.1" || name == "small_stmt.2" || name == "small_stmt.3" || name == "small_stmt.4" || name == "small_stmt.5" ) {
             flag = semantic_analysis_recursive((root->children)[0]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             root->T = (root->children)[0]->T;
             root->declarations = (root->children)[0]->declarations;
         }
@@ -3256,15 +3265,9 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // next_small_stmt SEMI_COLON small_stmt
             (root->children)[0]->T = root->T;
             flag = semantic_analysis_recursive((root->children)[0]);
-            if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+            if(flag < 0) return flag;
             flag = semantic_analysis_recursive((root->children)[2]);
-            if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+            if(flag < 0) return flag;
             root->T = (root->children)[0]->T;
             root->declarations = (root->children)[0]->declarations;
             (root->declarations).insert(
@@ -3297,14 +3300,12 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 // stmt_helper COMMA NAME
                 (root->children)[0]->T = root->T;
                 flag = semantic_analysis_recursive((root->children)[0]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+                if(flag < 0) return flag;
                 string content = (root->children)[2]->content;
                 int len = content.length();
                 ASTNode* node = new ASTNode();
-                set_name_type(node, content, len);
+                flag = set_name_type(node, content, len);
+                if(flag < 0) return flag;
                 root->T = (root->children)[0]->T;
                 (root->T->fields).push_back(node->T);
                 root->declarations = (root->children)[0]->declarations;
@@ -3325,13 +3326,11 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         string content = (root->children)[1]->content;
         int len = content.length();
         ASTNode* node = new ASTNode();
-        set_name_type(node, content, len);
+        flag = set_name_type(node, content, len);
+        if(flag < 0) return flag;
         (root->children)[2]->T = node->T;
         flag = semantic_analysis_recursive((root->children)[2]);
-        if (flag < 0) {
-            // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-            return flag;
-        }
+        if(flag < 0) return flag;
         root->declarations = (root->children)[2]->declarations;
         root->T = (root->children)[2]->T;
         (root->T->fields).push_front(node->T);
@@ -3342,15 +3341,9 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         if(name == "assert_stmt.1") {
             // ASSERT test COMMA test
             flag = semantic_analysis_recursive((root->children)[1]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             flag = semantic_analysis_recursive((root->children)[3]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             TypeExpression* T = type_checking_binary((root->children)[1], (root->children)[2]->content, (root->children)[3]);
             root->T = T;
             root->declarations = (root->children)[1]->declarations;
@@ -3362,10 +3355,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         else if(name == "assert_stmt.2") {
             // ASSERT test
             flag = semantic_analysis_recursive((root->children)[1]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             root->T = (root->children)[0]->T;
             root->declarations = (root->children)[1]->declarations;
         }
@@ -3389,14 +3379,12 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             STentry* entry = add(lexeme, "NAME", (root->children)[1]->T, root->lineno, root->columnno, &flag);
             if(entry == NULL) {
                 // Some error has occured in the Symbol Table. Handle this in Semantic error handling
-                // // cout << "Error in adding entry" << "\n";
                 string error_message = "Error in declaration of variable";
                 semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
                 return -1;
             }
             else if(flag > 0) {
                 // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
-                // // cout << "Some other error happened" << "\n";
                 semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
             }
 
@@ -3410,41 +3398,14 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         else if(name == "expr_stmt.2") {
             // testlist_star_expr AUGASSIGN testlist
             flag = semantic_analysis_recursive((root->children)[0]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            } 
+            if(flag < 0) return flag;
             flag = semantic_analysis_recursive((root->children)[2]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
-
-            TypeExpression* T = type_checking_binary((root->children)[0], (root->children)[1]->content, (root->children)[2]);
-            string lexeme = (root->children)[0]->full_content;
-            // STentry* entry = add(lexeme, "NAME", T, root->lineno, root->columnno, &flag);
-            // if(entry == NULL) {
-            //     // Some error has occured in the Symbol Table. Handle this in Semantic error handling
-            //     // // cout << "Error in adding entry" << "\n";
-            //     string error_message = "Error in declaration of variable";
-            //     semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
-            //     return -1;
-            // }
-            // else if(flag > 0) {
-            //     // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
-            //     // // cout << "Some other error happened" << "\n";
-            //     semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
-            // }
+            if(flag < 0) return flag;
             
-            // SCOPE CHECKING IS TO BE DONE HERE
-            // STentry* entry = lookup(lexeme, NULL);
-            // if(entry == NULL) {
-            //     // Some error has occured in the Symbol Table. Handle this in Semantic error handling
-            //     // // cout << "Error in adding entry" << "\n";
-            //     string error_message = "Scope Error occured in assignment\n";
-            //     semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
-            //     return -1;
-            // }
+            // SCOPE AND TYPE CHECKING
+            // scope checking is not required because that would have been already done on "atom_expr" level.
+            TypeExpression* T = type_checking_binary((root->children)[0], (root->children)[1]->content, (root->children)[2]);
+            if(T == NULL) return -1;
 
             root->T = T;
             root->declarations = (root->children)[0]->declarations;
@@ -3517,16 +3478,10 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // star_expr continued_testlist COMMA
             // star_expr continued_testlist
             flag = semantic_analysis_recursive((root->children)[0]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if (flag < 0) return flag;
             (root->children)[1]->T = (root->children)[0]->T;
             flag = semantic_analysis_recursive((root->children)[1]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if (flag < 0) return flag;
             root->T = (root->children)[1]->T;
             root->declarations = (root->children)[1]->declarations;
         }
@@ -3535,7 +3490,6 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             if(PARSER_DEBUG_INSIDE_VERBOSE) printf("[PARSING ERROR]: Error in parsing process encountered during semantic analysis\n");
             return -1;
         }
-        // cout << "Exited testlist_star_expr" << "\n";
     }
 
     // Check the semantic analysis for a simple statement
@@ -3755,10 +3709,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         if(name == "finally_stmt.1") {
             // FINALLY COLON suite
             flag = semantic_analysis_recursive((root->children)[2]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             root->T = (root->children)[2]->T;
             root->declarations = (root->children)[2]->declarations;
         }
@@ -3779,20 +3730,14 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         // EXCEPT test AS NAME
         if(name == "except_clause.1") {
             flag = semantic_analysis_recursive((root->children)[1]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             root->T = (root->children)[1]->T;
             root->declarations = (root->children)[1]->declarations;
         }
         else if(name == "except_clause.2") {
             // EXCEPT test
             flag = semantic_analysis_recursive((root->children)[1]);
-            if (flag < 0) {
-                // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                return flag;
-            }
+            if(flag < 0) return flag;
             root->T = (root->children)[1]->T;
             root->declarations = (root->children)[1]->declarations;
         }
@@ -3808,72 +3753,49 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         }
     }
 
-    if (type == "for_stmt") {
+    if(type == "for_stmt") {
         // FOR exprlist IN testlist COLON suite else_stmt
         flag = semantic_analysis_recursive((root->children)[1]);
-        if (flag < 0) {
-            // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-            return flag;
-        }
+        if(flag < 0) return flag;
         flag = semantic_analysis_recursive((root->children)[3]);
-        if (flag < 0) {
-            // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-            return flag;
-        }
+        if(flag < 0) return flag;
         root->T = type_bool();
 
-        // cout << "Going into incrementation of scope" << "\n";
         flag = incr_scope(OTHER_SCOPE, "FOR", root->T);
         if(flag < 0) return flag;
-        // cout << "For loop scope incrementation is done" << "\n";
         flag = semantic_analysis_recursive((root->children)[5]);
-        if (flag < 0) {
-            // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-            return flag;
-        }
+        if(flag < 0) return flag;
         flag = decr_scope();
         if (flag < 0) return flag;
         (root->table) = (root->children)[5]->table;
 
         flag = semantic_analysis_recursive((root->children)[6]);
-        if (flag < 0) {
-            // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-            return flag;
-        }
+        if(flag < 0) return flag;
 
         root->declarations = (root->children)[5]->declarations;
     }
 
-    if (type == "while_stmt") {
+    if(type == "while_stmt") {
         // WHILE test COLON suite else_stmt
         flag = semantic_analysis_recursive((root->children)[1]);
-        if (flag < 0) {
-            // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-            return flag;
-        }
+        if(flag < 0) return flag;
         root->T = type_bool();
 
         flag = incr_scope(OTHER_SCOPE, "WHILE", root->T);
         if(flag < 0) return flag;
         flag = semantic_analysis_recursive((root->children)[3]);
-        if (flag < 0) {
-            // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-            return flag;
-        }
+        if(flag < 0) return flag;
         flag = decr_scope();
         if(flag < 0) return flag;
         (root->table) = (root->children)[3]->table;
 
         flag = semantic_analysis_recursive((root->children)[4]);
-        if (flag < 0) {
-            // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-            return flag;
-        }
+        if(flag < 0) return flag;
 
         root->declarations = (root->children)[3]->declarations;
     }
 
-    if (type == "else_stmt") {
+    if(type == "else_stmt") {
         switch ((root->children).size()) {
             case 3: {
                 // ELSE COLON suite
@@ -3882,10 +3804,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 flag = incr_scope(OTHER_SCOPE, "ELSE", root->T);
                 if(flag < 0) return flag;
                 flag = semantic_analysis_recursive((root->children)[2]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+                if(flag < 0) return flag;
                 flag = decr_scope();
                 if(flag < 0) return flag;
                 (root->table) = (root->children)[2]->table;
@@ -3912,24 +3831,15 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             case 5: {
                 // elif_stmt ELIF test COLON suite
                 flag = semantic_analysis_recursive((root->children)[0]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+                if(flag < 0) return flag;
                 flag = semantic_analysis_recursive((root->children)[2]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+                if(flag < 0) return flag;
                 root->T = type_bool();
 
                 flag = incr_scope(OTHER_SCOPE , "ELIF", root->T);
                 if(flag < 0) return flag;
                 flag = semantic_analysis_recursive((root->children)[4]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
+                if(flag < 0) return flag;
                 flag = decr_scope();
                 if(flag < 0) return flag;
                 (root->table) = (root->children)[4]->table;
@@ -4005,34 +3915,14 @@ int semantic_analysis_recursive(struct ASTNode* root) {
 
                 // SCOPE AND TYPE CHECKING
                 // scope checking is not required because that would have been already done on "atom_expr" level.
-                int type_set_flag = 0;
-                if((root->children)[1]->T->type == TYPE_ARRAY) {
-                    if((root->children)[3]->T->type == TYPE_ARRAY) {
-                        (root->children)[1]->T->number = (root->children)[3]->T->number;
-                        // cout << "Constructed array length is " << (root->children)[1]->T->number << "\n";
-                        root->T = type_array((root->children)[1]->T->number, (root->children)[1]->T->array);
-                        type_set_flag = 1;
-                    }
-                    else {
-                        // This should be a type checking error by default in here
-                    }
-                }
-                else if((root->children)[3]->T->type == TYPE_FUNC) {
-                    TypeExpression* domain = (root->children)[3]->T->domain;
-                    TypeExpression* range = (root->children)[1]->T;
-                    
-                    // SCOPE CHECKING SHOULD BE DONE HERE
-                    // type_scope_check((root->children))
-                    (root->children)[3]->T = type_function(domain, range);
-                    // string lexeme = "";
-                    // STentry* entry = lookup(lexeme, (root->children)[3]->T);
-                }
-                else {
-                    TypeExpression* T = type_checking_binary((root->children)[1], (root->children)[2]->content, (root->children)[3]);
-                    if(T == NULL) return -1;
+                int type_check_flag = type_check_with_typecast((root->children)[1]->T, (root->children)[3]->T);
+                if(type_check_flag != 1) {
+                    // cout << "Semantic error from annassign\n";
+                    semantic_error_type((root->children)[1], "=", (root->children)[3]);
+                    return -1;
                 }
 
-                if(type_set_flag == 0) root->T = (root->children)[1]->T;
+                root->T = (root->children)[1]->T;
                 root->declarations = (root->children)[1]->declarations;
                 (root->declarations).insert(
                     (root->declarations).end(),
@@ -4059,43 +3949,31 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         }
     }
 
-    if (type == "suite") {
-        // cout << "Inside suite" << "\n";
-        switch ((root->children).size()) {
-            case 4: {
-                // NEWLINE INDENT stmts DEDENT
-                flag = semantic_analysis_recursive((root->children)[2]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
-                if((root->children)[2]->T->type == TYPE_RECORD) root->T = (root->children)[2]->T;
-                else {
-                    deque<TypeExpression*> type;
-                    type.push_back((root->children)[2]->T);
-                    root->T = type_record(type);
-                }
-                root->declarations = (root->children)[2]->declarations;
-                break;
-            }
-            case 1: {
-                // simple_stmt
-                flag = semantic_analysis_recursive((root->children)[0]);
-                if (flag < 0) {
-                    // cout << "Error taken inside " << (root->type) << " for " << (root->name) << "\n";
-                    return flag;
-                }
-                root->T = (root->children)[0]->T;
-                root->declarations = (root->children)[0]->declarations;
-                break;
-            }
-            default: {
-                // This error should not happen of the parse tree is correctly constructed
-                if(PARSER_DEBUG_INSIDE_VERBOSE) printf("[PARSING ERROR]: Error in parsing process encountered during semantic analysis\n");
-                return -1;
-            }
+    if(type == "suite") {
+        if(name == "suite.1") {
+            // simple_stmt
+            flag = semantic_analysis_recursive((root->children)[0]);
+            if(flag < 0) return flag;
+            root->T = (root->children)[0]->T;
+            root->declarations = (root->children)[0]->declarations;
         }
-        // cout << "Exited suite" << "\n";
+        else if(name == "suite.2") {
+            // NEWLINE INDENT stmts DEDENT
+            flag = semantic_analysis_recursive((root->children)[2]);
+            if(flag < 0) return flag;
+            if((root->children)[2]->T->type == TYPE_RECORD) root->T = (root->children)[2]->T;
+            else {
+                deque<TypeExpression*> type;
+                type.push_back((root->children)[2]->T);
+                root->T = type_record(type);
+            }
+            root->declarations = (root->children)[2]->declarations;
+        }
+        else {
+            // This error should not happen of the parse tree is correctly constructed
+            if(PARSER_DEBUG_INSIDE_VERBOSE) printf("[PARSING ERROR]: Error in parsing process encountered during semantic analysis\n");
+            return -1;
+        }
     }
 
     if(SYMBOL_TABLE_DEBUG_OUTSIDE_VERBOSE) {

@@ -76,7 +76,8 @@ public:
         // This points inside Symbol Table entry where lexeme is stored. This is specifically used for string type.
         // This is set after the TypeExpression is added to the 
         string* lexeme;
-        // This will be 0 in general. However, if this denotes a CLASS then it will be 1. This flag shows if a Type is a class.
+        // This will be 0 in general. However, if this denotes a CLASS then it will be the user_defined_type_number.
+        // This flag shows if a Type is a class.
         int class_flag;
 
         // The following in the variables in UNION of all possible types.
@@ -124,6 +125,7 @@ public:
         // Similar to the same_type() function declared below in this file.
         // Returns -1 in cases of errors like not defined type T
         int same_type(TypeExpression* T);
+        int same_type_with_typecast(TypeExpression* T);
 };
 typedef class TypeExpression TypeExpression;
 
@@ -299,6 +301,7 @@ int fillActivationRecords(SymbolTable* table);
 // Returns -1 in cases of error like not defined types
 //      -> Any error here will be fallout from Symbol so no need to fill SemanticError structure
 int type_check(TypeExpression* T1, TypeExpression* T2);
+int type_check_with_typecast(TypeExpression* T1, TypeExpression* T2);
 
 // HELPER CONSTRUCTOR FUNCTIONS FOR TYPE EXPRESSION - BASED ON Pg 371-372 DRAG BOOK DESCRIPTION
 TypeExpression* type_bool();                                                   // "bool" basic type constructor
@@ -318,7 +321,8 @@ TypeExpression* type_user_defined(int type);                                   /
 TypeExpression* type_record(
     deque<TypeExpression*> fields,
     int flag = 0,
-    deque<TypeExpression*> inherit = deque<TypeExpression*>()
+    deque<TypeExpression*> inherit = deque<TypeExpression*>(),
+    string lexeme = ""
 );
 
 /*********************************** FUNCTION DECLARATIONS ********************************************************/

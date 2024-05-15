@@ -385,7 +385,6 @@ int command_parse(int argc, char* argv[]) {
 }
 
 int main(int argc, char* argv[]) {
-    
     // A sample test case for debugging the complete source code
     if(COMPILER_DEBUG == 1) {
         argc = 7;
@@ -396,7 +395,6 @@ int main(int argc, char* argv[]) {
         argv[5] = strdup("--parse");
         argv[6] = strdup("b.pdf");
     }
-    // cout << "argv: " << argv[2] << "\n";
     
     /***************************************** COMMAND LINE UTILITY *******************************************/
     
@@ -408,43 +406,26 @@ int main(int argc, char* argv[]) {
         // Program terminates here as a help flag was called or an error occured during compilation.
         return 1;
     }
-    // printf("%s\n", assembly_outputfile_path);
-
 
     if(DEBUG_X86) {
-
-        // cout << "start\n";
-
         const char* file_path_3ac = "../testcases/x86_testcases/x86_output/test4/test4.txt";
         const char* output_x86_path = "../testcases/x86_testcases/x86_output/test4/test4_akshat.s";
 
         FILE* output_x86;
         output_x86 = fopen(output_x86_path, "w");
-
-        // cout << "file opened\n";
-
         if(!output_x86) {
             fprintf(stderr, "[COMPILER ERROR]: File %s not found\n", output_x86_path);
             return 1;
         }
-
         string code_3ac = readFromFile(file_path_3ac);
-
-        // cout << "code read from file\n";
-
         regAlloc = new RegisterAllocation();
-
-        // cout << "reg allocated\n";
-
         int flag = generate_x86(code_3ac,output_x86);
-
         if(flag < 0) {
             printf("[x86 GENERATION ERROR]: Error in x86_64 generation\n");
             return 1;
         }
         return 0;
     }
-    // printf("%s\n", assembly_outputfile_path);
 
     /***************************************** COMMAND LINE UTILITY ENDS **************************************/
 
@@ -454,11 +435,8 @@ int main(int argc, char* argv[]) {
     // Call the main parser loop which drives the lexer as well internally.
     // The symbol table is created here itself and semantic checking is done alongwith syntax checking.
     // A visualisation of the parsing is created in form of a abstract syntax tree of the program.
-    // printf("Just before entering parser %s\n", assembly_outputfile_path);
     if(DEBUG_OUTSIDE_VERBOSE) cout << "[COMPILER]: Entering the main parser loop" << "\n";
-    // printf("Here just above parser %s\n", assembly_outputfile_path);
     flag = yyparse();
-    // printf("%s\n", assembly_outputfile_path);
     if(flag != 0) {
         // Program terminates here as an error occured during parsing.
         return 1;
@@ -482,11 +460,9 @@ int main(int argc, char* argv[]) {
         cout << "------------------------------------------------------------" << endl;
         cout << "[COMPILER][COMPILER][COMPILER][COMPILER][COMPILER][COMPILER]" << endl;
     }
-    // cout << isAST << "\n";
 
     // If the AST flag is set then the compiler would not move ahead this
     if(isAST == true) return 0;
-    // printf("%s\n", assembly_outputfile_path);
 
     // Debug for symbol table
     if(DEBUG_SYMBOL_TABLE == 1) {
@@ -520,7 +496,6 @@ int main(int argc, char* argv[]) {
                 fprintf(stderr, "[COMPILER ERROR]: Error in creating folder for symbol table.\n");
                 return 1;
             }
-            
             // Call the function to dump all of the symbol table in the given file
             dumpAllSTs(path_sym, currTable);
         }
@@ -529,8 +504,6 @@ int main(int argc, char* argv[]) {
     }
 
     if(DEBUG_3AC == 0) {
-        // cout << "hello" << "\n";
-        
         // TOP TO DOWN PASS SEMANTIC ANALYSIS PHASE
         // Semantic Analysis and Symbol Table construction is done here
         if(DEBUG_3AC_OUTSIDE_VERBOSE) cout << "[COMPILER]: ENTERING INTO SEMANTIC ANALYSIS" << "\n";
@@ -580,7 +553,6 @@ int main(int argc, char* argv[]) {
             }
         }
     }
-    // printf("%s\n", assembly_outputfile_path);
 
     /***************************************** FRONTEND OF COMPILER ENDS **************************************/
 
@@ -605,13 +577,11 @@ int main(int argc, char* argv[]) {
     // MACHINE OPTIMIZATION PHASE
     // Machine Optimizations for the generated IR for efficient execution of the program.
 
-
     // Writing of the 3AC IR in a text file.
     FILE* output_3ac;
     if(strlen(path_3ac) == 0) {
         string path_3ac_string = "3ac_out.txt";
         path_3ac = const_cast<char*>(path_3ac_string.c_str());
-        // printf("Path of 3ac file %s\n", path_3ac);
     }
     output_3ac = fopen(path_3ac, "w");
     if(!output_3ac) {
@@ -621,12 +591,7 @@ int main(int argc, char* argv[]) {
     
     // Write into file the code for 3AC
     string code_3ac = *(root->code);
-    // cout << code_3ac << "\n";
-    fprintf(output_3ac, "%s\n", const_cast<char*>(code_3ac.c_str()));
     fclose(output_3ac);
-    // fprintf(output_3ac, "%s", code_3ac.c_str());
-    // char* code = const_cast<char*>(code_3ac.c_str());
-    // fprintf(output_3ac, code);
 
     if(DEBUG_OUTSIDE_VERBOSE) {
         // Print the label mappings generated by the compiler for the x86 code generation
@@ -635,11 +600,9 @@ int main(int argc, char* argv[]) {
         }
     }
 
-    // printf("Path of 3ac file %s\n", path_3ac);
     if(MILESTONE2_DEMO == 0) {
         // CODE GENERATION PHASE
         // Conversion of intermediate code to final x86 assembly program that can run directly on modern systems supporting x86 architecture.
-        // printf("Path of 3ac file %s\n", path_3ac);
         if(strlen(assembly_outputfile_path) == 0) {
             // Get the current working directory
             char cwd[1000];
@@ -655,7 +618,6 @@ int main(int argc, char* argv[]) {
             }
         }
         FILE* output_x86;
-        // printf("%s\n", assembly_outputfile_path);
         output_x86 = fopen(assembly_outputfile_path, "w");
         if(!output_x86) {
             fprintf(stderr, "[COMPILER ERROR]: File %s not found\n", assembly_outputfile_path);
@@ -674,15 +636,12 @@ int main(int argc, char* argv[]) {
         }
 
         path_3ac = const_cast<char*>(path_3ac_string.c_str());
-        // printf("Path of 3ac file %s\n", path_3ac);
     }
 
-    // printf("Path of 3ac file %s\n", path_3ac);
     // Deletion of the 3AC IR in a text file based on the flags passed to the compiler from command line.
     if(GENERATION_3AC == 0) {
         string path_3ac_string(path_3ac);
         string command = "rm " + path_3ac_string; // Command to execute
-        // cout << command << "\n";
         int result = system(const_cast<char*>(command.c_str())); // Execute the command
         if(result != 0) { // Check if the command executed successfully
             fprintf(stderr, "[COMPILER ERROR]: An internal error occurred.\n");

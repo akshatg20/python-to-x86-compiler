@@ -449,6 +449,62 @@ int TypeExpression::same_type(TypeExpression* T) {
     return false; // Code should never reach here
 }
 
+// Based on Type Equivalence on Pg 372 of DRAG Book
+int TypeExpression::same_type_with_typecast(TypeExpression* T) {
+    // cout << "Here in same_type_with_typecast\n";
+    if(T == NULL) return -1;
+    else if(T->type == TYPE_UNDF || type == TYPE_UNDF) return -1;
+    else if(type >= 0 && type <= 7 && (T->type) >= 0 && (T->type) <= 7) {
+        // Both the types are formed from pre-defined type constructors only and are not user defined.
+        if(T->type == TYPE_BOOL || T->type == TYPE_FLOAT || T->type == TYPE_INT || T->type == TYPE_STR || T->type == TYPE_VOID) {
+            if(type == T->type) return 1;
+            else if(type == TYPE_FLOAT && T->type == TYPE_INT) return 1;
+            else if(type == TYPE_INT && T->type == TYPE_FLOAT) return 1;
+            else if(type == TYPE_VOID || T->type == TYPE_VOID) return 1;
+            else return 0;
+        }
+        else if(type == TYPE_BOOL || type == TYPE_FLOAT || type == TYPE_INT || type == TYPE_STR || type == TYPE_VOID) {
+            return 0;
+        }
+        else if(T->type != type) return 0;
+        else if(type == TYPE_ARRAY) {
+            // cout << "Type checking for arrays\n";
+            if(number == T->number || number == -1 || T->number == -1) return type_check_with_typecast(array, T->array);
+            else {
+                // cout << "Type check error here\n";
+                return 0;
+            }
+        }
+        else if(type == TYPE_FUNC) {
+            bool check1 = type_check_with_typecast(domain, T->domain);
+            bool check2 = type_check_with_typecast(range, T->range);
+            if(check1 == true && check2 == true) return 1;
+            else return 0;
+        }
+        else if(type == TYPE_RECORD) {
+            if(fields.size() != (T->fields).size()) return false;
+            for(int i=0; i<fields.size(); i++) {
+                bool check = type_check_with_typecast(fields[i], (T->fields)[i]);
+                if(check == false) return 0;
+            }
+            return 1;
+        }
+    }
+    else {
+        // This type is a user defined compound type.
+        // Will require using the symbol table for getting information about the same.
+        int num = type_scope_check(T);
+        if(num < 0) return -1;
+        if(type >= 0 && type <= 7) {
+            TypeExpression* T_base = ret_user_defined(num);
+            return same_type(T_base);
+        }
+        else return type_check_with_typecast(user_defined, T);
+    }
+
+    return false; // Code should never reach here
+}
+
 /*********************************** MEMBER FUNCTIONS FOR TypeExpressions ******************************************/
 
 /*********************************** FUNCTION DEFINITIONS *********************************************************/
@@ -584,11 +640,9 @@ int incr_scope(int scope_flag, string lexeme, TypeExpression* T) {
     // increment the scope level
     current_scope++;
     string key = lexeme;
-    // cout << "here\n";
     if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme,T->encode);
 
     // create a new symbol table
-    // cout << "here\n";
     SymbolTable* newTable = new SymbolTable(currTable,scope_flag,key);
 
     // assign this pointer to the function entry in the orginal symbol table
@@ -597,26 +651,20 @@ int incr_scope(int scope_flag, string lexeme, TypeExpression* T) {
         STentry* entry = lookup(lexeme,T);
         if(entry == NULL) {
             // This is a case of error and this should not occur.
-            // However, due to the details of the implementation this can occur in case of classes
-            if(scope_flag == FUNC_SCOPE) {
-                // cout << "Okay so basically the entry is not found\n";
-                ErrorMsg->error_type = ERR_NOT_FOUND;
-                ErrorMsg->lineno = yylineno;
-                if(scope_flag == FUNC_SCOPE) ErrorMsg->msg = "Function " + lexeme + " is not defined in this scope.";
-                else ErrorMsg->msg = "Class " + lexeme + " is not defined in this scope.";
-                return -1;
-            }
+            ErrorMsg->error_type = ERR_NOT_FOUND;
+            ErrorMsg->lineno = yylineno;
+            if(scope_flag == FUNC_SCOPE) ErrorMsg->msg = "Function " + lexeme + " is not defined in this scope.";
+            else ErrorMsg->msg = "Class " + lexeme + " is not defined in this scope.";
+            return -1;
         }
         else entry->tablePtr = newTable;
     }
 
     // make the parent and child connections
-    // cout << "here\n";
     currTable->children.push_back(newTable);
     newTable->parent = currTable;
 
     // now point the currTable pointer to this newly created table
-    // cout << "done\n";
     currTable = newTable;
     return 0;
 }
@@ -712,7 +760,6 @@ TypeExpression* ret_user_defined(int type) {
 }
 
 int type_scope_check(TypeExpression* T) {
-
     if(T == NULL) {
         ErrorMsg->error_type = ERR_WRG_USE;
         ErrorMsg->lineno = yylineno;
@@ -772,37 +819,36 @@ int type_scope_check(TypeExpression* T) {
 // In case of no error return the pointer to symbol table entry generated and keep value of flag as 0.
 // In case of any error return NULL and fill SemanticError appropriately. In this case value of flag is irrelevant.
 STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table = NULL) {
-    rectify_type(T);
+    // Check and rectify the type expression in case the encoding is not updated
+    if(T != NULL) rectify_type(T);
     string key = lexeme;
-    if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme,T->encode);
-    // cout << key << endl;
-    STentry* entry = lookupScope(key,T);
+    if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme, T->encode);
+    STentry* entry = lookupScope(key, T);
+    
     // if it is a new entry
-    if(entry == NULL) {
-        // cout << "new entry";
-        *flag = 0;
-    }
+    if(entry == NULL) (*flag) = 0;
     // if entry already exists
     else {
         // in case of class overloading 
         if(entry->symbol_type->type == TYPE_RECORD) {
-            *flag = 2;
+            (*flag) = 2;
             ErrorMsg->error_type = WARNING;
             ErrorMsg->lineno = yylineno;
             ErrorMsg->msg = "Class Overloading warning";
         }
         else if(entry->symbol_type->type == TYPE_FUNC) {
-            *flag = 3;
+            (*flag) = 3;
             ErrorMsg->error_type = WARNING;
             ErrorMsg->lineno = yylineno;
             ErrorMsg->msg = "Same function declared twice";
         }
         else {
-            *flag = 1;
+            (*flag) = 1;
             ErrorMsg->error_type = WARNING;
             ErrorMsg->lineno = yylineno;
             ErrorMsg->msg = "Variable Overloading warning";
         }
+
         // delete previous entry
         if(deleteEntryScope(key) == 0) {
             ErrorMsg->error_type = ERR_OTHER;
@@ -811,6 +857,7 @@ STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int 
             return NULL;
         }
     }
+
     // add new entry
     STentry* newEntry = new STentry(lexeme, T, lineno, current_scope, token, column);
     // add this entry to the current symbol table
@@ -829,18 +876,24 @@ STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int 
 // of TypeExpression is changed after adding the entry to Symbol Table.
 STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table) {
     STentry* entry = ST_add(lexeme, token, T, lineno, column, flag, table);
-    T->lexeme = (&(entry->lexeme));
+    
+    // This case of lexeme mapping to the type is not done in case a NULL type is passed. This must be done
+    // manually by the calling authority in case a NULL type is passed at some point.
+    if(T != NULL) T->lexeme = (&(entry->lexeme));
+    
     if(entry != NULL) {
         // cout << "Symbol table entry is added which is NOT NULL" << "\n";
         // cout << "Entry is for " << lexeme << " with encoding " << T->encode << " in symbol table named " << currTable->name << "\n";
         // cout << "Entry is space " << (T->space) << "\n";
     }
-    // else cout << "Symbol table entry is added which is NULL" << "\n";
+    else {
+        // cout << "Symbol table entry is added which is NULL" << "\n";
+    }
+
     return entry;
 }
 
 int compute_offsets(SymbolTable* table, int offset) {
-    
     // go through each entry in this table
     unordered_map<string,STentry>::iterator it;
 
@@ -1045,6 +1098,15 @@ int type_check(TypeExpression* T1, TypeExpression* T2) {
     return T.same_type(T2);
 }
 
+int type_check_with_typecast(TypeExpression* T1, TypeExpression* T2) {
+    if(T1 == NULL || T2 == NULL) return 0;
+    int num1 = type_scope_check(T1);
+    int num2 = type_scope_check(T2);
+    if(num1 < 0 || num2 < 0) return -1;
+    TypeExpression T = *(T1);
+    return T.same_type_with_typecast(T2);
+}
+
 TypeExpression* type_bool() {
     int type = TYPE_BOOL;
     int number = -1;
@@ -1089,10 +1151,17 @@ TypeExpression* type_array(int number, TypeExpression* array) {
     return ptr;
 }
 
-TypeExpression* type_record(deque<TypeExpression*> fields, int flag, deque<TypeExpression*> inherit) {
+TypeExpression* type_record(deque<TypeExpression*> fields, int flag, deque<TypeExpression*> inherit, string lexeme) {
     int type = TYPE_RECORD;
     int number = -1;
     TypeExpression* ptr = new TypeExpression(type, number, fields, 0, flag, inherit);
+    
+    // Class is a user-defined type. So, it needs to be informed to the symbol table
+    if(flag == 1) {
+        int type_number = define_type(ptr, lexeme);
+        ptr->class_flag = type_number;
+    }
+    
     return ptr;
 }
 

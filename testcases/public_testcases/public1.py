@@ -19,10 +19,8 @@ def main():
 
   print('Sorted Array in Ascending Order:')
   i: int = 0
-  x : None = len(data)
   for i in range(len(data)):
     print(data[i])
-
 
 if __name__ == "__main__":
   main()
