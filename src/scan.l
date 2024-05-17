@@ -33,7 +33,7 @@ yycolumn += yyleng;
 
 // All required external source files are already included to this code.
 // Declare any external variables you want to use here with an "extern" keyword.
-
+extern int parser_number_type;
 
 /*********************************** DATA STORAGE STRUCTURES ******************************************************/
 
@@ -233,9 +233,28 @@ invalid_bytesliteral    ({bytesprefix}?)({invalid_shortbytes}|{invalid_longbytes
     return STRING;
 }
 
-<INSIDE_BRACKET>{number}                            {
+<INSIDE_BRACKET>{integer}                           {
     lexemeMap[yytext] = "NUMBER";
     lexemeCount[yytext]++;
+    parser_number_type = 1;  // Denotes integer type
+    if(LEXER_DEBUG_INSIDE_VERBOSE) printf("[LEXER]: %s detected\n",yytext);
+    yylval.lexeme = strdup(yytext);
+    return NUMBER;
+}
+
+<INSIDE_BRACKET>{floatnumber}                       {
+    lexemeMap[yytext] = "NUMBER";
+    lexemeCount[yytext]++;
+    parser_number_type = 2;  // Denotes floating-point type
+    if(LEXER_DEBUG_INSIDE_VERBOSE) printf("[LEXER]: %s detected\n",yytext);
+    yylval.lexeme = strdup(yytext);
+    return NUMBER;
+}
+
+<INSIDE_BRACKET>{imagnumber}                        {
+    lexemeMap[yytext] = "NUMBER";
+    lexemeCount[yytext]++;
+    parser_number_type = 3;  // Denotes imaginary-number type
     if(LEXER_DEBUG_INSIDE_VERBOSE) printf("[LEXER]: %s detected\n",yytext);
     yylval.lexeme = strdup(yytext);
     return NUMBER;
@@ -390,9 +409,28 @@ invalid_bytesliteral    ({bytesprefix}?)({invalid_shortbytes}|{invalid_longbytes
     return STRING;
 }
 
-{number}                                            {
+{integer}                                           {
     lexemeMap[yytext] = "NUMBER";
     lexemeCount[yytext]++;
+    parser_number_type = 1;  // Denotes integer type
+    if(LEXER_DEBUG_INSIDE_VERBOSE) printf("[LEXER]: %s detected\n",yytext);
+    yylval.lexeme = strdup(yytext);
+    return NUMBER;
+}
+
+{floatnumber}                                       {
+    lexemeMap[yytext] = "NUMBER";
+    lexemeCount[yytext]++;
+    parser_number_type = 2;  // Denotes floating-point type
+    if(LEXER_DEBUG_INSIDE_VERBOSE) printf("[LEXER]: %s detected\n",yytext);
+    yylval.lexeme = strdup(yytext);
+    return NUMBER;
+}
+
+{imagnumber}                                        {
+    lexemeMap[yytext] = "NUMBER";
+    lexemeCount[yytext]++;
+    parser_number_type = 3;  // Denotes imaginary-number type
     if(LEXER_DEBUG_INSIDE_VERBOSE) printf("[LEXER]: %s detected\n",yytext);
     yylval.lexeme = strdup(yytext);
     return NUMBER;

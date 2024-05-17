@@ -85,6 +85,7 @@ ASTNode* createNode(string type, string content)  {
         node->lineno = 0;
         node->columnno = 0;
         node->debug_num = 0;
+        node->num_type = 0;
         
         node->tr = new string("");
         node->fl = new string("");

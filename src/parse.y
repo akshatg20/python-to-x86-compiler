@@ -67,6 +67,7 @@ void yyerror(const char* s);
 /* Debug mode specification variables for parser */
 int PARSER_DEBUG_OUTSIDE_VERBOSE = 0;       // for debugging purposes only
 int PARSER_DEBUG_INSIDE_VERBOSE = 0;        // for verbose output purposes
+int parser_number_type = 0;                 // 1 for integer 2 for floating-point and 3 for imaginary-number
 
 /*********************************** DATA STORAGE ELEMENTS ********************************************************/
 %}
@@ -2897,6 +2898,7 @@ atom:
                         $$ = processNodes("atom", 1,
                                 createNode("NUMBER", $1)
                         );
+                        $$->num_type = parser_number_type;
                 }
                 else $$ = createNode("NUMBER", $1);
 

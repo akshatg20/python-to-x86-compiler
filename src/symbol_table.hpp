@@ -202,7 +202,7 @@ typedef struct STentry STentry;
 
 class SymbolTable {
 public:
-    unordered_map<string, STentry> hashTable;        // the hash table for the current node 
+    unordered_map<string, STentry*> hashTable;       // the hash table for the current node 
     vector<SymbolTable*> children;                   // children of current node   
     SymbolTable* parent;                             // parent of current node 
     int type;                                        // type of symbol table
@@ -215,7 +215,6 @@ public:
     SymbolTable(SymbolTable* parent, int flag, string name);
     // function to dump the symbol table
     void dumpST(FILE* outputFile, SymbolTable* table);
-
 };
 
 /*********************************** DATA STORAGE STRUCTURES ******************************************************/
@@ -252,6 +251,7 @@ int compute_offsets(SymbolTable* table, int offset);
 // But this pointer can be available only after adding the lexeme to Symbol Table. So, "lexeme" field
 // of TypeExpression is changed after adding the entry to Symbol Table.
 STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table = NULL);
+void rectify_type(TypeExpression* T);
 
 // LOOKUP NEEDS TO SUPPORT FUNCTION OVERLOADING AND OVERRIDING SO FUNCTIONALITY IS APPENDED WITH TYPE KEY
 // function to lookup entry in the symbol table
@@ -262,6 +262,8 @@ STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int col
 // In case of any error (like lookup not successful) return NULL and fill SemanticError appropriately.
 STentry* lookup(string lexeme, TypeExpression* T = NULL);
 STentry* lookup_restricted(string lexeme, TypeExpression* T = NULL);
+STentry* lookupScope(string lexeme, TypeExpression* T = NULL);
+STentry* lookup_restricted_scope(string lexeme, TypeExpression* T = NULL);
 
 // function to increment the scope level and create a new symbol table for the new scope
 int incr_scope(int scope_flag, string lexeme, TypeExpression* T = NULL);
@@ -275,6 +277,7 @@ int decr_scope();
 // If this name is used for some other identifier then it will be an error
 // In case of some error return -1 and fill SemanticError structure appropriately
 int define_type(TypeExpression* T, string name);
+int withdraw_type(int type);
 
 // Given the TYPE NUMBER return the pointer to TypeExpression corresponding to this type if this is a user defined type.
 // The Returned TypeExpression should belong to the current scope or parent scope.
@@ -284,7 +287,7 @@ TypeExpression* ret_user_defined(int type);
 // Given pointer to a TypeExpression the Symbol Table should return -1 if the type is undefined in the current scope (including parent scopes)
 // In case of well defined types the TYPE NUMBER should be returned. Type Number should always be >= 0
 // In case of some error return -2 and fill SemanticError structure appropriately
-int type_scope_check(TypeExpression* T);
+int type_scope_check(TypeExpression* T, int flag = 0);
 
 // THIS FUNCTION WILL REQUIRE MODIFICATION BASED ON NEW SYMBOL TABLE STRUCTURE
 // function to print all symbol tables, should be called with the globalST

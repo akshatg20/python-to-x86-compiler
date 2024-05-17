@@ -27,6 +27,7 @@ struct ASTNode {
         deque<struct ASTNode*> children;
         // Details about the position of the non-terminal
         int debug_num; // Numbering of parse tree visits
+        int num_type;  // This is used specifically for NUMBER terminal and denotes the type of the number
         int lineno;
         int columnno;
         // Data elements required for construction of the 3AC from the Parse Tree
