@@ -151,8 +151,10 @@ ASTNode* processNodes(string name, int numNodes, ...)
                         ASTNode* i = arr[x];
                         if(i != NULL) {
                                 (node->children).push_back(i);
-                                // cout << (i->full_content) << "\n";
-                                if(i->full_content != EPSILON) (node->full_content) += (i->full_content);
+                                if(i->full_content == "" || i->full_content == EPSILON) continue;
+                                else if(i->full_content == ".") (node->full_content) += (i->full_content);
+                                else if((i->full_content)[0] == '.' && (node->full_content).length() > 0) (node->full_content) = (i->full_content).substr(1); 
+                                else (node->full_content) += (i->full_content);
                         }
                 }
         }

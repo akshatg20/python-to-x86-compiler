@@ -260,16 +260,18 @@ void rectify_type(TypeExpression* T);
 // IN CASES WHEN A FUNCTION IS NOT LOOKED UP IT IS NOT GUARANTEED THAT A TYPE-EXPRESSION WILL BE PROVIDED.
 // In case of no error return the pointer to symbol table entry for this lexeme.
 // In case of any error (like lookup not successful) return NULL and fill SemanticError appropriately.
-STentry* lookup(string lexeme, TypeExpression* T = NULL);
-STentry* lookup_restricted(string lexeme, TypeExpression* T = NULL);
-STentry* lookupScope(string lexeme, TypeExpression* T = NULL);
-STentry* lookup_restricted_scope(string lexeme, TypeExpression* T = NULL);
+STentry* lookup(string lexeme, TypeExpression* T = NULL, int flag = 0);
+STentry* lookup_restricted(string lexeme, TypeExpression* T = NULL, int flag = 0);
+STentry* lookupScope(string lexeme, TypeExpression* T = NULL, int flag = 0);
+STentry* lookup_restricted_scope(string lexeme, TypeExpression* T = NULL, int flag = 0);
 
 // function to increment the scope level and create a new symbol table for the new scope
 int incr_scope(int scope_flag, string lexeme, TypeExpression* T = NULL);
 // function to decrement the scope level
 int decr_scope();
 
+// This function is used for inheritance support. All the data members of the base classes are inherited to derived class.
+int inherit_class_members(vector<SymbolTable*> inherited_tables);
 
 // Given pointer to a TypeExpression the Symbol Table should return a UNIQUE TYPE NUMBER for the user defined type T.
 // This type number should be unique in Current Scope and Parent scopes. The name of this type will be "name".

@@ -43,6 +43,8 @@ extern unordered_map<int,TypeExpression*> numToUserDefined;
 // All variables that you want to declare should go here.
 int DEBUG_TYPE_CALL_COUNTER = 0;
 stack<int> DEBUG_TYPE_CONTROL_FLOW;
+stack<SymbolTable*> scope_resolver;
+stack<int> scope_flag;
 int scope_resolution_flag = 0;
 
 // Symbol Table Configurations
@@ -696,7 +698,7 @@ int set_name_type(ASTNode* root, string content, int len) {
         else {
             // This "self" actually is a reference to a class object.
             string class_name = class_names_in_type_system.top();
-            STentry* entry = lookup(class_name, NULL);
+            STentry* entry = lookup(class_name);
             if(entry == NULL || entry->symbol_type == NULL) {
                 // This case should not occur this is some internal compilation error.
                 int type = ERR_UNDF;
@@ -827,7 +829,10 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 TypeExpression* none = type_void();
                 TypeExpression* T = type_function((root->children)[2]->T, none);
                 string lexeme = (root->children)[1]->content;
-                STentry* entry = add(lexeme, "FUNCTION", T, root->lineno, root->columnno, &flag);
+                STentry* entry = NULL;
+                if(class_names_in_type_system.empty()) entry = add(lexeme, "FUNCTION", T, root->lineno, root->columnno, &flag);
+                else if(lexeme == "__init__") entry = add(lexeme, "CONSTRUCTOR", T, root->lineno, root->columnno, &flag);
+                else entry = add(lexeme, "MEMBER_FUNCTION", T, root->lineno, root->columnno, &flag);
                 if(entry == NULL) {
                     // Some error has occured in the Symbol Table. Handle this in Semantic error handling
                     // cout << "Error in adding entry" << "\n";
@@ -1122,9 +1127,37 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 // Variable overloading or class overloading is done which will may not be intended. Issue a warning for this.
                 semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, "", flag);
             }
+            
 
             flag = incr_scope(CLASS_SCOPE, lexeme, NULL);
             if(flag < 0) return flag;
+            
+            // Inheritance support is required. All the members of the base classes are added to the current symbol table.
+            deque<TypeExpression*> inherits = arglist_type->fields;
+            vector<SymbolTable*> inherited_tables;
+            for(int i = 0; i < inherits.size(); i++) {
+                TypeExpression* T = inherits[i];
+                string class_name = (T->encode);
+                STentry* entry = lookup(class_name);
+                if(entry == NULL) {
+                    int type = ERR_NOT_FOUND;
+                    string msg = "Class name " + class_name + " not found in current scope";
+                    (ErrorMsg->msg) = "";
+                    semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
+                    return -1;
+                }
+                SymbolTable* table = entry->tablePtr;
+                inherited_tables.push_back(table);
+            }
+            flag = inherit_class_members(inherited_tables);
+            if(flag < 0) {
+                int type = ERR_UNDF;
+                string msg = "Some internal compilation error occured";
+                (ErrorMsg->msg) = "";
+                semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
+                return -1;
+            }
+            
             flag = semantic_analysis_recursive((root->children)[6]);
             if(flag < 0) return flag;
             flag = decr_scope();
@@ -1143,6 +1176,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
                 return -1;
             }
+            rectify_type(T2);
             T2->lexeme = (&(entry->lexeme));
             entry->symbol_type = T2;
             class_names_in_type_system.pop();
@@ -1718,7 +1752,12 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         // COLON
     }
 
-    if (type == "arglist") {
+    if(type == "arglist") {
+        // Save the original scope of the program for possible changes
+        scope_resolver.push(currTable);
+        scope_flag.push(scope_resolution_flag);
+        scope_resolution_flag = 0;
+        
         // argument continued_argument COMMA
         // argument continued_argument
         flag = semantic_analysis_recursive((root->children)[0]);
@@ -1733,6 +1772,12 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             (root->declarations).end(),
             ((root->children)[1]->declarations).begin(), ((root->children)[1]->declarations).end()
         );
+
+        // Reinstate the current scope and clear the scope resolution flag
+        scope_resolution_flag = scope_flag.top();
+        currTable = scope_resolver.top();
+        scope_resolver.pop(); scope_flag.pop();
+        // cout << "Current table changed to " << currTable->name << " in arglist\n";
     }
 
     if (type == "argument") {
@@ -2158,6 +2203,16 @@ int semantic_analysis_recursive(struct ASTNode* root) {
     if(type == "trailers") {
         if(name == "trailers.1") {
             // trailers trailer
+            
+            // Setup for num_type number checking whether we have a function call here
+            if(root->num_type == 1) {
+                (root->children)[0]->num_type = 1;
+                (root->children)[1]->num_type = 1;
+            }
+            else if((root->children)[1]->name == "trailer.1" || (root->children)[1]->name == "trailer.2") {
+                (root->children)[0]->num_type = 1;
+            }
+            
             (root->children)[0]->T = (root->T);
             (root->children)[0]->names = (root->names);
             
@@ -2196,15 +2251,13 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         if(name == "trailer.1") {
             // OPENING_BRACKET arglist CLOSING_BRACKET
             // A function denoted by this trailer
-            SymbolTable* table = currTable;
-            currTable = actual_currTable;
             flag = semantic_analysis_recursive((root->children)[1]);
             if(flag < 0) return flag;
-            currTable = table;
             root->declarations = (root->children)[1]->declarations;            
             
             // First step is to handle the function calls for functions inside a class
-            if((root->T->type) == TYPE_RECORD && root->T->class_flag > 0) {
+            SymbolTable* our_table = NULL;
+            if((root->T->type) == TYPE_RECORD && root->T->class_flag > 0 && scope_resolution_flag == 0) {
                 // The given function name is actually a class name
                 // In case the denoted name has class type then it actually represents the __init__ constructor of that class
                 STentry* entry = lookup((root->names)[0]);
@@ -2217,16 +2270,26 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 }
                 
                 SymbolTable* table = entry->tablePtr;
+                our_table = currTable;
                 currTable = table;
+                // cout << "Current table changed to " << currTable->name << " in trailer.1\n";
                 scope_resolution_flag = root->T->class_flag;
-                (root->T) = new TypeExpression();
                 (root->names)[0] = "__init__";
-            }
-            if(scope_resolution_flag > 0) {
+
                 TypeExpression* type = type_user_defined(scope_resolution_flag);
                 deque<TypeExpression*> dq = (root->children)[1]->T->fields;
                 dq.push_front(type);
                 (root->children)[1]->T = type_record(dq);
+            }
+            if(scope_resolution_flag > 0) {
+                if(root->T->class_flag == 0) {
+                    // The given scope resolution is a class object
+                    TypeExpression* type = type_user_defined(scope_resolution_flag);
+                    deque<TypeExpression*> dq = (root->children)[1]->T->fields;
+                    dq.push_front(type);
+                    (root->children)[1]->T = type_record(dq);
+                }
+                (root->T) = new TypeExpression();
             }
             
             // Second step is to contruct the type of the function being called if it's type is not already known
@@ -2234,8 +2297,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 TypeExpression* domain = (root->children)[1]->T;
                 TypeExpression* range = new TypeExpression();
                 TypeExpression* T = type_function(domain, range);
-                STentry* entry = lookup_restricted((root->names)[0], T);
-                // cout << "Return from lookup_restricted inside trailer.1\n";
+                STentry* entry = lookup_restricted((root->names)[0], T, 1);
                 if(entry == NULL) {
                     int type = ERR_WRONG_PARAMS;
                     string msg = "No method named " + (root->names)[0] + " with appropriate parameter list found";
@@ -2297,29 +2359,69 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 return -1;
             }
             else (root->T) = (root->T->range);
+            if(our_table != NULL) currTable = our_table;
         }
         else if(name == "trailer.2") {
             // OPENING_BRACKET CLOSING_BRACKET
             // A function call with void parameters is denoted by this trailer
             root->declarations = vector<STentry*>();
 
-            // First step is to contruct the type of the function being called if it's type is not already known
+            // First step is to handle the function calls for functions inside a class
+            SymbolTable* our_table = NULL;
+            if((root->T->type) == TYPE_RECORD && root->T->class_flag > 0 && scope_resolution_flag == 0) {
+                // The given function name is actually a class name
+                // In case the denoted name has class type then it actually represents the __init__ constructor of that class
+                STentry* entry = lookup((root->names)[0]);
+                if(entry == NULL) {
+                    int type = ERR_NOT_FOUND;
+                    string msg = "Class name " + (root->names)[0] + " not found in current scope";
+                    (ErrorMsg->msg) = "";
+                    semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
+                    return -1;
+                }
+                
+                SymbolTable* table = entry->tablePtr;
+                our_table = currTable;
+                currTable = table;
+                // cout << "Current table changed to " << currTable->name << " in trailer.2\n";
+                scope_resolution_flag = root->T->class_flag;
+                (root->names)[0] = "__init__";
+
+                TypeExpression* type = type_user_defined(scope_resolution_flag);
+                deque<TypeExpression*> dq = (root->children)[1]->T->fields;
+                dq.push_front(type);
+                (root->children)[1]->T = type_record(dq);
+            }
+
+            TypeExpression* domain = type_void();
+            if(scope_resolution_flag > 0) {
+                if(root->T->class_flag == 0) {
+                    // The given scope resolution is a class object
+                    TypeExpression* type = type_user_defined(scope_resolution_flag);
+                    deque<TypeExpression*> dq = deque<TypeExpression*>();
+                    dq.push_front(type);
+                    domain = type_record(dq);
+                }
+                (root->T) = new TypeExpression();
+            }
+            
+            // Secind step is to contruct the type of the function being called if it's type is not already known
             if((root->T->type) == TYPE_UNDF) {
-                TypeExpression* domain = type_void();
                 TypeExpression* range = new TypeExpression();
                 TypeExpression* T = type_function(domain, range);
-                cout << "Calling lookup restricted here, next should be debug output for lookup restricted\n";
-                if(currTable == NULL) cout << "Oh current scope is NULL\n";
-                STentry* entry = lookup_restricted((root->names)[0], T);
+                STentry* entry = lookup_restricted((root->names)[0], T, 1);
                 if(entry == NULL) {
+                    // cout << "We Have a NULL entry returned\n";
                     int type = ERR_WRONG_PARAMS;
-                    cout << "Error occured during lookup restricted\n";
                     string msg = "No method named " + (root->names)[0] + " with empty parameter list found";
                     (ErrorMsg->msg) = "";
                     semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
                     return -1;
                 }
-                else root->T = entry->symbol_type;
+                else {
+                    // cout << "We have a correct entry returned\n";
+                    root->T = entry->symbol_type;
+                }
             }
             
             if((root->T->type) != TYPE_FUNC) {
@@ -2330,15 +2432,15 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
                 return -1;
             }
-            else if((root->T->domain->type) != TYPE_VOID) {
+            else if((root->T->domain->type) != TYPE_VOID && domain->type == TYPE_VOID) {
                 int type = ERR_WRONG_PARAMS;
-                cout << "Error occured otherwise\n";
                 string msg = "No method named " + (root->names)[0] + " with empty parameter list found";
                 (ErrorMsg->msg) = "";
                 semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
                 return -1;
             }
             else (root->T) = (root->T->range);
+            if(our_table != NULL) currTable = our_table;
         }
         else if(name == "trailer.3") {
             // OPENING_SQ_BRACKET subscriptlist CLOSING_SQ_BRACKET
@@ -2346,9 +2448,11 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // Infact this can also be used for dictionary and set indexing cases.
             SymbolTable* table = currTable;
             currTable = actual_currTable;
+            // cout << "Current table changed to " << currTable->name << " in trailer.3\n";
             flag = semantic_analysis_recursive((root->children)[1]);
             if(flag < 0) return flag;
             currTable = table;
+            // cout << "Current table changed to " << currTable->name << " in trailer.3\n";
             root->declarations = (root->children)[1]->declarations;
 
             // Type Setting for subscripting of a type
@@ -2424,7 +2528,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 STentry* entry = lookup(class_name);
                 if(entry == NULL) {
                     int type = ERR_NOT_FOUND;
-                    string msg = "No class named " + class_name + " not found in the current scope";
+                    string msg = "Class named " + class_name + " not found in the current scope";
                     (ErrorMsg->msg) = "";
                     semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
                     return -1;
@@ -2432,17 +2536,25 @@ int semantic_analysis_recursive(struct ASTNode* root) {
 
                 SymbolTable* table = entry->tablePtr;
                 currTable = table;
+                // cout << "Current table changed to " << currTable->name << " in trailer.4 for class names\n";
                 scope_resolution_flag = root->T->class_flag;
-                (root->T) = new TypeExpression();
                 (root->names)[0] = (root->children)[1]->content;
+                entry = lookup((root->names)[0], NULL, 1);
+                if(entry == NULL) {
+                    // This is not necessarily an error because if this is a function call then the error will be caught later.
+                    // For now if there is no function call trailer associated here then we an immediately point to an error.
+                    // For the error case we can still not point to the error immediately because it maybe a variable declaration itself.
+                    if(root->num_type == 0) (root->T) = new TypeExpression();
+                }
+                else root->T = entry->symbol_type;
             }
             else if(root->T->class_flag == 0) {
                 // A class object is being used for scope resolution
                 int type_number = (root->T->type);
                 string obj_name = (root->names)[0];
-                // cout << "Inside class object scope resolution for object name " << obj_name << "\n";
                 TypeExpression* type = ret_user_defined(type_number);
                 string class_name = (*(type->lexeme));
+                // cout << "Inside class object scope resolution for object name " << obj_name << " in class " << class_name << "\n";
                 STentry* entry = lookup(class_name);
                 if(entry == NULL) {
                     int type = ERR_NOT_FOUND;
@@ -2454,17 +2566,19 @@ int semantic_analysis_recursive(struct ASTNode* root) {
 
                 SymbolTable* table = entry->tablePtr;
                 currTable = table;
-                // cout << "Scope resolved to table " << currTable->name << "\n";
+                // cout << "Current table changed to " << currTable->name << " inside trailer.4 for class objects\n";
                 scope_resolution_flag = type_number;
-                (root->T) = new TypeExpression();
                 (root->names)[0] = (root->children)[1]->content;
-                if(obj_name == "self") {
-                    // "self" is a special keyword which will be handled seperately for classes.
-                    // Any new name with "self" will be a new member variable in the class if not already present.   
+                entry = lookup((root->names)[0], NULL, 1);
+                if(entry == NULL) {
+                    // This is not necessarily an error because if this is a function call then the error will be caught later.
+                    // For now if there is no function call trailer associated here then we an immediately point to an error.
+                    // For the error case we can still not point to the error immediately because it maybe a variable declaration itself.
+                    if(root->num_type == 0) (root->T) = new TypeExpression();
                 }
                 else {
-                    // Other object names will be handled in the regular manner assuming
-                    // the class definition is complete already.
+                    // cout << "We are here inside lookup success for trailer.4 for class objects\n";
+                    root->T = entry->symbol_type;
                 }
             }
             else {
@@ -2491,9 +2605,6 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             adder_num = 1;
         }
         if(name == "atom_expr.1" || name == "atom_expr.2") {
-            // Save the original scope of the program for possible changes
-            actual_currTable = currTable;
-            
             // AWAIT atom trailers
             // atom trailers
             // The trailer can actually change the type of the atom
@@ -2513,10 +2624,8 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // That is done inside the "trailers" and "trailer". Because that is easier.
             root->declarations = vector<STentry*>();
             (root->T) = (root->children)[1 + adder_num]->T;
-            
-            // Reinstate the current scope and clear the scope resolution flag
-            currTable = actual_currTable;
-            scope_resolution_flag = 0;
+            (root->names) = (root->children)[1 + adder_num]->names;
+            // cout << "atom_expr has given a type of " << (root->T->encode) << " for lexeme " << (root->names)[0] << "\n";
         }
         else {
             // This error should not happen of the parse tree is correctly constructed
@@ -3276,7 +3385,8 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 // stmt
                 flag = semantic_analysis_recursive((root->children)[0]);
                 if(flag < 0) return flag;
-                root->T = (root->children)[0]->T;
+                deque<TypeExpression*> decs = deque<TypeExpression*>(1, (root->children)[0]->T);
+                root->T = type_record(decs);
                 root->declarations = (root->children)[0]->declarations;
                 break;
             }
@@ -3308,7 +3418,14 @@ int semantic_analysis_recursive(struct ASTNode* root) {
     // Check the semantic analysis for a simple statement
     if(type == "simple_stmt") {
         if(name == "simple_stmt.1" || name == "simple_stmt.2") {
+            // Save the original scope of the program for possible changes
+            scope_resolver.push(currTable);
+            scope_flag.push(scope_resolution_flag);
+            scope_resolution_flag = 0;
+            
             // small_stmt next_small_stmt SEMI_COLON NEWLINE
+            // small_stmt next_small_stmt NEWLINE
+            
             flag = semantic_analysis_recursive((root->children)[0]);
             if(flag < 0) return flag;
             (root->children)[1]->T = (root->children)[0]->T;
@@ -3320,6 +3437,12 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 (root->declarations).end(),
                 ((root->children)[1]->declarations).begin(), ((root->children)[1]->declarations).end()
             );
+
+            // Reinstate the current scope and clear the scope resolution flag
+            scope_resolution_flag = scope_flag.top();
+            currTable = scope_resolver.top();
+            scope_resolver.pop(); scope_flag.pop();
+            // cout << "Current table changed to " << currTable->name << " in simple_stmt\n";
         }
         else {
             // This error should not happen of the parse tree is correctly constructed
@@ -3477,7 +3600,10 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             if (flag < 0) return flag;
 
             string lexeme = (root->children)[0]->full_content;
-            STentry* entry = add(lexeme, "NAME", (root->children)[1]->T, root->lineno, root->columnno, &flag);
+            STentry* entry = NULL;
+            if(scope_resolution_flag > 0) entry = add(lexeme, "MEMBER_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno,&flag);
+            else if(currTable->parent != NULL) entry = add(lexeme, "LOCAL_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno,&flag);
+            else entry = add(lexeme, "GLOBAL_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno, &flag);
             if(entry == NULL) {
                 // Some error has occured in the Symbol Table. Handle this in Semantic error handling
                 string error_message = "Error in declaration of variable";
@@ -4075,12 +4201,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // NEWLINE INDENT stmts DEDENT
             flag = semantic_analysis_recursive((root->children)[2]);
             if(flag < 0) return flag;
-            if((root->children)[2]->T->type == TYPE_RECORD) root->T = (root->children)[2]->T;
-            else {
-                deque<TypeExpression*> type;
-                type.push_back((root->children)[2]->T);
-                root->T = type_record(type);
-            }
+            root->T = (root->children)[2]->T;
             root->declarations = (root->children)[2]->declarations;
         }
         else {
@@ -4104,6 +4225,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
 int semantic_analysis() {
     ErrorMsg = new SemanticError();
     currTable = new SymbolTable();
+    actual_currTable = currTable;
     globalTable = currTable;
     while(!new_type_frame.empty()) new_type_frame.pop();
     numToType.clear();

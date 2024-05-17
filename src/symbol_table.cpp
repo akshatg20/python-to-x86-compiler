@@ -599,10 +599,18 @@ string extract_name(string key) {
 }
 
 // function to lookup entry in the symbol table, assumed that proper key is passed
-STentry* lookup(string lexeme, TypeExpression* T) {
+STentry* lookup(string lexeme, TypeExpression* T, int flag) {
+    SymbolTable* table_extra = NULL;
+    if(flag == 0 && currTable != actual_currTable) {
+        // The lookup functionality does not respect scope resolution and checks the actual scope only
+        table_extra = currTable;
+        currTable = actual_currTable;
+        // cout << "Current table changed to " << currTable->name << " inside lookup\n";
+    }
+    
     // generate key
     string key = lexeme;
-    if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme,T->encode);
+    if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme, T->encode);
 
     STentry* res = NULL;
     SymbolTable* temp = currTable;
@@ -617,12 +625,25 @@ STentry* lookup(string lexeme, TypeExpression* T) {
             temp = temp->parent;
         }
     }
+
+    if(table_extra != NULL) {
+        currTable = table_extra;
+        // cout << "Current table changed to " << currTable->name << " inside lookup\n";
+    }
     return res;
 }
 
 // function to lookup entry in the symbol table, assumed that proper key is passed
 // This is only called for functions and looks up only the domain part of the function.
-STentry* lookup_restricted(string lexeme, TypeExpression* T) {
+STentry* lookup_restricted(string lexeme, TypeExpression* T, int flag) {
+    SymbolTable* table_extra = NULL;
+    if(flag == 0 && currTable != actual_currTable) {
+        // The lookup functionality does not respect scope resolution and checks the actual scope only
+        table_extra = currTable;
+        currTable = actual_currTable;
+        // cout << "Current table changed to " << currTable->name << " inside lookup_restricted\n";
+    }
+    
     // This works only for function types
     if(T == NULL || T->type != TYPE_FUNC) return NULL;
     if(SYMBOL_TABLE_DEBUG_OUTSIDE_VERBOSE) {
@@ -668,11 +689,23 @@ STentry* lookup_restricted(string lexeme, TypeExpression* T) {
         else temp = temp->parent;
     }
 
+    if(table_extra != NULL) {
+        currTable = table_extra;
+        // cout << "Current table changed to " << currTable->name << " inside lookup_restricted\n";
+    }
     return res;
 }
 
 // function to lookup in scope
-STentry* lookupScope(string lexeme, TypeExpression* T) {
+STentry* lookupScope(string lexeme, TypeExpression* T, int flag) {
+    SymbolTable* table_extra = NULL;
+    if(flag == 0 && currTable != actual_currTable) {
+        // The lookup functionality does not respect scope resolution and checks the actual scope only
+        table_extra = currTable;
+        currTable = actual_currTable;
+        // cout << "Current table changed to " << currTable->name << " inside lookupScope\n";
+    }
+
 
     // generate key
     string key = lexeme;
@@ -682,12 +715,25 @@ STentry* lookupScope(string lexeme, TypeExpression* T) {
     if(currTable->hashTable.find(key) != currTable->hashTable.end()) {
         res = currTable->hashTable[key];
     }
+
+    if(table_extra != NULL) {
+        currTable = table_extra;
+        // cout << "Current table changed to " << currTable->name << " inside lookupScope\n";
+    }
     return res;
 }
 
 // function to lookup entry in the current symbol table only, assumed that proper key is passed
 // This is only called for functions and looks up only the domain part of the function.
-STentry* lookup_restricted_scope(string lexeme, TypeExpression* T) {
+STentry* lookup_restricted_scope(string lexeme, TypeExpression* T, int flag) {
+    SymbolTable* table_extra = NULL;
+    if(flag == 0 && currTable != actual_currTable) {
+        // The lookup functionality does not respect scope resolution and checks the actual scope only
+        table_extra = currTable;
+        currTable = actual_currTable;
+        // cout << "Current table changed to " << currTable->name << " inside lookup_restricted_scope\n";
+    }
+    
     // This works only for function types
     if(T == NULL || T->type != TYPE_FUNC) return NULL;
 
@@ -710,6 +756,10 @@ STentry* lookup_restricted_scope(string lexeme, TypeExpression* T) {
         }
     }
 
+    if(table_extra != NULL) {
+        currTable = table_extra;
+        // cout << "Current table changed to " << currTable->name << " inside lookup_restricted_scope\n";
+    }
     return res;
 }
 
@@ -744,6 +794,8 @@ int incr_scope(int scope_flag, string lexeme, TypeExpression* T) {
 
     // now point the currTable pointer to this newly created table and add an empty vector to the type_stack
     currTable = newTable;
+    actual_currTable = currTable;
+    // cout << "Current table changed to " << currTable->name << " in incr_scope()\n";
     new_type_frame.push(vector<int>());
     return 0;
 }
@@ -754,8 +806,11 @@ int decr_scope() {
     current_scope--;
 
     // point the *currTable pointer to the parent of the current node
-    if(currTable != NULL)
+    if(currTable != NULL) {
         currTable = currTable->parent;
+        actual_currTable = currTable;
+        // cout << "Current table changed to " << currTable->name << " in decr_scope()\n";
+    }
     else {
         // An empty currTable is a critical memory error
         ErrorMsg->error_type = ERR_UNDF;
@@ -797,6 +852,25 @@ int deleteEntryScope(string key) {
         currTable->hashTable.erase(key);
         return 1;
     }
+    return 0;
+}
+
+// This function is used for inheritance support. All the data members of the base classes are inherited to derived class.
+int inherit_class_members(vector<SymbolTable*> inherited_tables) {
+    int sz = inherited_tables.size();
+    for(int i = 0; i < sz; i++) {
+        SymbolTable* table = inherited_tables[i];
+        unordered_map<string, STentry*>::iterator it;
+        for(it = (table->hashTable).begin(); it != (table->hashTable).end(); it++) {
+            string lexeme = (it->first);
+            STentry* entry = (it->second);
+            (currTable->hashTable)[lexeme] = entry;
+            if(SYMBOL_TABLE_DEBUG_OUTSIDE_VERBOSE) {
+                cout << "[SYMBOL TABLE INHERITANCE]: Entry added for " << lexeme << " in symbol table " << currTable->name << "\n";
+            }
+        }
+    }
+
     return 0;
 }
 
@@ -931,7 +1005,10 @@ int type_scope_check(TypeExpression* T, int flag) {
         }
         string name = *(numToType[type]->lexeme);
         SymbolTable* table = currTable;
-        if(flag == 1 && scope_resolution_flag > 0) currTable = actual_currTable;
+        if(flag == 1 && scope_resolution_flag > 0) {
+            currTable = actual_currTable;
+            // cout << "Current table changed to " << currTable->name << " in type_scope_check\n";
+        }
         if(lookup(name) == NULL) {
             /* the type is not present in the current or parent scope */
             ErrorMsg->error_type = ERR_SCOPE;
@@ -940,6 +1017,7 @@ int type_scope_check(TypeExpression* T, int flag) {
             return -1;
         }
         currTable = table;
+        // cout << "Current table changed to " << currTable->name << " in type_scope_check\n";
         return (T->type);
     }
 
@@ -1085,20 +1163,22 @@ void dumpAllSTs(string DirPath, SymbolTable* table) {
             filePath = DirPath + "/" + table->name + "_symbol_table.csv";
         char* path = const_cast<char*> (filePath.c_str());
 
-        // Open the file for writing
-        FILE* filePtr = fopen(path, "w");
-        if(filePtr) {
-            table->dumpST(filePtr,table);
-        }
+        if(!(table->hashTable).empty()) {
+            // Open the file for writing
+            FILE* filePtr = fopen(path, "w");
+            if(filePtr) {
+                table->dumpST(filePtr,table);
+            }
 
-        // if error in opening file
-        else {
-            printf("[SYMBOL_TABLE_ERROR]: Couldn't create new file to dump symbol table\n");
-            return;
-        }
+            // if error in opening file
+            else {
+                printf("[SYMBOL_TABLE_ERROR]: Couldn't create new file to dump symbol table\n");
+                return;
+            }
 
-        // close the file
-        fclose(filePtr);
+            // close the file
+            fclose(filePtr);
+        }
     }
 
     // go through the children
@@ -1107,6 +1187,7 @@ void dumpAllSTs(string DirPath, SymbolTable* table) {
         // call dump function recursively
         dumpAllSTs(DirPath, *it);
     }
+    return;
 }
 
 // function to fill activation records of all functions
