@@ -34,10 +34,10 @@ class Calculator:
 def main():
     calculator: Calculator = Calculator()
 
-    result_add:float = calculator.add(10, 5)
-    result_subtract:float = calculator.subtract(result_add, 3)
-    result_multiply:float = calculator.multiply(result_subtract, 2)
-    result_divide:float = calculator.divide(result_multiply, 4)
+    result_add : float = calculator.add(10, 5)
+    result_subtract : float = calculator.subtract(result_add, 3)
+    result_multiply : float = calculator.multiply(result_subtract, 2)
+    result_divide : float = calculator.divide(result_multiply, 4)
 
     calculator.store_to_memory(result_divide)
     memory_recall:float = calculator.recall_memory()

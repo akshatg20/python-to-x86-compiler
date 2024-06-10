@@ -3,22 +3,20 @@ class DSU:
         """
         Initialize DSU with n elements.
         """
-        self.parent = []
-        self.rank = []
-        self.size = []
-
-        for i in range(n):
-            self.parent.append(i)
-            self.rank.append(0)
-            self.size.append(1)
+        self.parent : list[int] = []
+        self.rank : list[int] = []
+        self.size : list[int] = []        
+        return
     
     def find(self, x: int) -> int:
         """
         Find the parent of the element x with path compression.
         """
         if self.parent[x] != x:
-            self.parent[x] = self.find(self.parent[x])  # Path compression
-        return self.parent[x]
+            val : int = self.parent[x]
+            self.parent[x] = self.find(val)  # Path compression
+            chk : int = self.parent[x]
+        return chk
     
     def union(self, x: int, y: int) -> None:
         """
@@ -37,6 +35,7 @@ class DSU:
                 self.parent[root_y] = root_x
                 self.rank[root_x] = self.rank[root_x] + 1
                 self.size[root_x] = self.size[root_x] + self.size[root_y]
+        return
 
     def get_size(self, x: int) -> int:
         """

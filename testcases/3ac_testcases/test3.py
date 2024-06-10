@@ -1,13 +1,13 @@
 class MyClass:
-    def __init__(self, name):
-        self.name = name
+    def __init__(self, name : str):
+        self.name : str = name
     
     def greet(self):
-        print("Hello,", self.name)
+        print("Hello, ", self.name)
 
 def main():
     # Creating an object of MyClass with a name parameter
-    obj = MyClass("Alice")
+    obj : MyClass = MyClass("Alice")
     # Calling the greet method
     obj.greet()
 

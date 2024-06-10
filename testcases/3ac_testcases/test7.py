@@ -1,24 +1,25 @@
 class MyClass:
-    static_variable = 10
+    static_variable : int = 10
 
-    def __init__(self, value):
-        self.instance_variable = value
+    def __init__(self, value : int):
+        self.instance_variable : int = value
 
     def instance_method(self):
         print("This is an instance method")
-        print("Instance variable:", self.instance_variable)
-        print("Static variable:", MyClass.static_variable)
+        print("Instance variable: ", self.instance_variable)
+        print("Static variable: ", MyClass.static_variable)
 
     def static_method():
         print("This is a static method")
-        print("Static variable:", MyClass.static_variable)
+        print("Static variable: ", MyClass.static_variable)
 
-    def iterate_range(start, stop, step=1):
+    def iterate_range(start : int, stop : int, step : int = 1):
+        i : int = 0
         for i in range(start, stop, step):
             print(i)
 
 def main():
-    obj = MyClass(5)
+    obj : MyClass = MyClass(5)
 
     # Calling instance method
     obj.instance_method()

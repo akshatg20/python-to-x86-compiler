@@ -16,11 +16,14 @@ lex.yy.c
 *.out
 *.o
 *.i
+*.s
 *.ipp
 *.csv
+*.sh
 mylexer
 scan
 parser
 cs335
 *.dmp
 *.pdf
+3ac.txt

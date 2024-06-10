@@ -9,7 +9,7 @@ def is_prime(x : int) -> bool:
     return True
 
 def main() -> None:
-    x : int = int(input("Enter your number here: "))
+    x : int = 27
     check : bool = is_prime(x)
     if check == True:
         print("The given number is prime.")

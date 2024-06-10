@@ -703,9 +703,7 @@ STentry* lookupScope(string lexeme, TypeExpression* T, int flag) {
         // The lookup functionality does not respect scope resolution and checks the actual scope only
         table_extra = currTable;
         currTable = actual_currTable;
-        // cout << "Current table changed to " << currTable->name << " inside lookupScope\n";
     }
-
 
     // generate key
     string key = lexeme;
@@ -716,10 +714,7 @@ STentry* lookupScope(string lexeme, TypeExpression* T, int flag) {
         res = currTable->hashTable[key];
     }
 
-    if(table_extra != NULL) {
-        currTable = table_extra;
-        // cout << "Current table changed to " << currTable->name << " inside lookupScope\n";
-    }
+    if(table_extra != NULL) currTable = table_extra;
     return res;
 }
 
@@ -731,7 +726,6 @@ STentry* lookup_restricted_scope(string lexeme, TypeExpression* T, int flag) {
         // The lookup functionality does not respect scope resolution and checks the actual scope only
         table_extra = currTable;
         currTable = actual_currTable;
-        // cout << "Current table changed to " << currTable->name << " inside lookup_restricted_scope\n";
     }
     
     // This works only for function types
@@ -756,10 +750,7 @@ STentry* lookup_restricted_scope(string lexeme, TypeExpression* T, int flag) {
         }
     }
 
-    if(table_extra != NULL) {
-        currTable = table_extra;
-        // cout << "Current table changed to " << currTable->name << " inside lookup_restricted_scope\n";
-    }
+    if(table_extra != NULL) currTable = table_extra;
     return res;
 }
 
@@ -795,7 +786,6 @@ int incr_scope(int scope_flag, string lexeme, TypeExpression* T) {
     // now point the currTable pointer to this newly created table and add an empty vector to the type_stack
     currTable = newTable;
     actual_currTable = currTable;
-    // cout << "Current table changed to " << currTable->name << " in incr_scope()\n";
     new_type_frame.push(vector<int>());
     return 0;
 }
@@ -1040,12 +1030,12 @@ int type_scope_check(TypeExpression* T, int flag) {
 // Class Overloading will generate warning - Please update the value of flag to 2 in this case. Fill SemanticError appropriately.
 // In case of no error return the pointer to symbol table entry generated and keep value of flag as 0.
 // In case of any error return NULL and fill SemanticError appropriately. In this case value of flag is irrelevant.
-STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table = NULL) {
+STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table = NULL, int scope = 1) {
     // Check and rectify the type expression in case the encoding is not updated
     if(T != NULL) rectify_type(T);
     string key = lexeme;
     if(T != NULL && T->type == TYPE_FUNC) key = generateKey(lexeme, T->encode);
-    STentry* entry = lookupScope(key, T);
+    STentry* entry = lookupScope(key, T, scope);
     
     // if it is a new entry
     if(entry == NULL) (*flag) = 0;
@@ -1082,11 +1072,20 @@ STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int 
 
     // add new entry
     STentry* newEntry = new STentry(lexeme, T, lineno, current_scope, token, column);
+    
+    SymbolTable* table_extra = NULL;
+    if(scope == 0 && currTable != actual_currTable) {
+        // The lookup functionality does not respect scope resolution and checks the actual scope only
+        table_extra = currTable;
+        currTable = actual_currTable;
+    }
+
     // add this entry to the current symbol table
     currTable->hashTable[key] = newEntry;
-
     // set the Symboltable pointer
     table = currTable;
+
+    if(table_extra != NULL) currTable = table_extra;
 
     // return pointer to the entry
     return newEntry;
@@ -1096,16 +1095,19 @@ STentry* ST_add(string lexeme, string token, TypeExpression* T, int lineno, int 
 // This function is made because the TypeExpression needs to store a pointer to the lexeme it points to
 // But this pointer can be available only after adding the lexeme to Symbol Table. So, "lexeme" field
 // of TypeExpression is changed after adding the entry to Symbol Table.
-STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table) {
-    STentry* entry = ST_add(lexeme, token, T, lineno, column, flag, table);
+STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table, int scope) {
+    STentry* entry = ST_add(lexeme, token, T, lineno, column, flag, table, scope);
     
     // This case of lexeme mapping to the type is not done in case a NULL type is passed. This must be done
     // manually by the calling authority in case a NULL type is passed at some point.
     if(T != NULL) T->lexeme = (&(entry->lexeme));
     
     if(entry != NULL) {
+        SymbolTable* table_extra = NULL;
+        if(scope == 0 && currTable != actual_currTable) table_extra = actual_currTable;
+        else table_extra = currTable;
         // cout << "Symbol table entry is added which is NOT NULL" << "\n";
-        // cout << "Entry is for " << lexeme << " with encoding " << T->encode << " in symbol table named " << currTable->name << "\n";
+        // cout << "Entry is for " << lexeme << " with encoding " << T->encode << " in symbol table named " << table_extra->name << "\n";
         // cout << "Entry is space " << (T->space) << "\n";
     }
     else {

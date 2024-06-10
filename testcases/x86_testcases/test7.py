@@ -1,6 +1,6 @@
 class MathOperation:
     def __init__(self) -> None:
-        self.lifespan=0
+        self.lifespan : int = 0
         print("Inside the constructor for MathOperation class")
         return
 

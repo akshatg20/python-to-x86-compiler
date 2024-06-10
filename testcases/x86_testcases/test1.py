@@ -6,7 +6,7 @@ def main() -> None:
     i : int = 0
     for i in range(x + 1):
         # y : int = factorial(i)
-        print("Value of factorial of ", i, " can be found.\n")
+        print("Value of factorial of ", i, " can be found.")
     return
 
 if __name__ == "__main__":

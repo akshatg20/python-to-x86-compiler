@@ -1,16 +1,16 @@
-def add(x: int, y: int) -> int:
+def add(x : int, y : int) -> int:
     ans : int = x + y
     return ans
 
-def subtract(x: int, y: int) -> int:
+def subtract(x : int, y : int) -> int:
     ans : int = x - y
     return ans
 
-def multiply(x: int, y: int) -> int:
+def multiply(x : int, y : int) -> int:
     ans : int = x * y
     return ans
 
-def divide(x: int, y: int) -> int:
+def divide(x : int, y : int) -> int:
     ans : int = 0
     if y != 0:
         ans = x / y
@@ -19,7 +19,7 @@ def divide(x: int, y: int) -> int:
     return ans
 
 def relational(x : int, y : int) -> bool:
-    ans : bool = ( x == y)
+    ans : bool = (x == y)
     return ans
 
 def assignment(x : int, y : int) -> int:
@@ -40,7 +40,7 @@ def main():
     result_divide : int = divide(10, 5)
     print("Result of Division: ", result_divide)
 
-    result_relational : int = relational(10, 5)
+    result_relational : bool = relational(10, 5)
     print("Result of Relational Operation: ", result_relational)
 
     result_assignment : int = assignment(10, 5)

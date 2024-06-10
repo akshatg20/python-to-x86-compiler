@@ -250,7 +250,7 @@ int compute_offsets(SymbolTable* table, int offset);
 // This function is made because the TypeExpression needs to store a pointer to the lexeme it points to
 // But this pointer can be available only after adding the lexeme to Symbol Table. So, "lexeme" field
 // of TypeExpression is changed after adding the entry to Symbol Table.
-STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table = NULL);
+STentry* add(string lexeme, string token, TypeExpression* T, int lineno, int column, int* flag, SymbolTable* table = NULL, int scope = 1);
 void rectify_type(TypeExpression* T);
 
 // LOOKUP NEEDS TO SUPPORT FUNCTION OVERLOADING AND OVERRIDING SO FUNCTIONALITY IS APPENDED WITH TYPE KEY

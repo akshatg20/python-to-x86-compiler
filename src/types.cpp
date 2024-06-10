@@ -1169,7 +1169,17 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
                 return flag;
             }
-            TypeExpression* T2 = type_record((root->children)[6]->T->fields, 1, arglist_type->fields, lexeme);
+
+            // Directly take the types of the entities in the class using the symbol table rather than the suite
+            deque<TypeExpression*> types_included = deque<TypeExpression*>();
+            SymbolTable* table = entry->tablePtr;
+            unordered_map<string, STentry*>::iterator it;
+            for(it = (table->hashTable).begin(); it != (table->hashTable).end(); it++) {
+                STentry* ent = it->second;
+                types_included.push_back(ent->symbol_type);
+            }
+
+            TypeExpression* T2 = type_record(types_included, 1, arglist_type->fields, lexeme);
             if(T2 == NULL) {
                 // Some internal compiler error must have occured. Call the error function and return
                 string error_message = "";
@@ -1218,7 +1228,17 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
                 return flag;
             }
-            TypeExpression* T2 = type_record((root->children)[5]->T->fields, 1, deque<TypeExpression*>(), lexeme);
+
+            // Directly take the types of the entities in the class using the symbol table rather than the suite
+            deque<TypeExpression*> types_included = deque<TypeExpression*>();
+            SymbolTable* table = entry->tablePtr;
+            unordered_map<string, STentry*>::iterator it;
+            for(it = (table->hashTable).begin(); it != (table->hashTable).end(); it++) {
+                STentry* ent = it->second;
+                types_included.push_back(ent->symbol_type);
+            }
+
+            TypeExpression* T2 = type_record(types_included, 1, deque<TypeExpression*>(), lexeme);
             if(T2 == NULL) {
                 // Some internal compiler error must have occured. Call the error function and return
                 string error_message = "";
@@ -1266,7 +1286,17 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 semantic_error_symbol(ErrorMsg->error_type, root->lineno, root->columnno, error_message);
                 return flag;
             }
-            TypeExpression* T2 = type_record((root->children)[3]->T->fields, 1, deque<TypeExpression*>(), lexeme);
+
+            // Directly take the types of the entities in the class using the symbol table rather than the suite
+            deque<TypeExpression*> types_included = deque<TypeExpression*>();
+            SymbolTable* table = entry->tablePtr;
+            unordered_map<string, STentry*>::iterator it;
+            for(it = (table->hashTable).begin(); it != (table->hashTable).end(); it++) {
+                STentry* ent = it->second;
+                types_included.push_back(ent->symbol_type);
+            }
+
+            TypeExpression* T2 = type_record(types_included, 1, deque<TypeExpression*>(), lexeme);
             if(T2 == NULL) {
                 // Some internal compiler error must have occured. Call the error function and return
                 string error_message = "";
@@ -2134,12 +2164,11 @@ int semantic_analysis_recursive(struct ASTNode* root) {
         else if(name == "atom.7") {
             // NAME
             string content = (root->children)[0]->content;
-            // cout << "Name found which is " << content << "\n";
             int len = content.length();
             flag = set_name_type(root, content, len);
             if(flag < 0) return flag;
             (root->names) = deque<string>(1, content);
-            // cout << "Name found which is " << content << " with type " << (root->T->encode) << "\n";
+            // cout << "Name found which is " << content << " with type " << (root->T->encode) << " on line " << (root->lineno) << "\n";
         }
         else if(name == "atom.8") {
             // NUMBER
@@ -2305,10 +2334,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                     semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
                     return -1;
                 }
-                else {
-                    root->T = entry->symbol_type;
-                    // cout << "Found function entry for method " << (root->names)[0] << " with type " << (root->T->encode) << "\n";
-                }
+                else root->T = entry->symbol_type;
             }
             
             // Scope checking for the function being called is to be done here
@@ -2332,18 +2358,23 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 else arg_flag = 0;
             }
             else if((root->names)[0] == "print") {
+                // cout << "print function with parameters " << (root->children)[1]->T->encode << " on line number " << (root->lineno) << "\n";
                 int num_fields = ((root->children)[1]->T->fields).size();
-                if(num_fields == 0) arg_flag = 0;
-                else {
-                    arg_flag = check_print_param((root->children)[1]->T);
-                    if(arg_flag == 1) root->T->domain = (root->children)[1]->T;
-                }
+                arg_flag = check_print_param((root->children)[1]->T);
+                if(arg_flag == 1) root->T->domain = (root->children)[1]->T;
             }
             else if((root->names)[0] == "range") {
                 int num_fields = ((root->children)[1]->T->fields).size();
-                if(num_fields > 2 || num_fields == 0 || ((root->children)[1]->T->fields)[0]->type != TYPE_INT) arg_flag = 0;
+                if( num_fields > 3 || num_fields <= 0 ||
+                    (((root->children)[1]->T->fields)[0]->type != TYPE_INT && ((root->children)[1]->T->fields)[0]->type != TYPE_FLOAT)
+                ) arg_flag = 0;
                 else {
-                    if(num_fields == 2 && ((root->children)[1]->T->fields)[1]->type != TYPE_INT) arg_flag = 0;
+                    if( num_fields >= 2 &&
+                        (((root->children)[1]->T->fields)[1]->type != TYPE_INT && ((root->children)[1]->T->fields)[1]->type != TYPE_FLOAT)
+                    ) arg_flag = 0;
+                    else if(num_fields == 3 &&
+                            (((root->children)[1]->T->fields)[2]->type != TYPE_INT && ((root->children)[1]->T->fields)[2]->type != TYPE_FLOAT)
+                    ) arg_flag = 0;
                     else {
                         arg_flag = 1;
                         root->T->domain = (root->children)[1]->T;
@@ -2368,6 +2399,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
 
             // First step is to handle the function calls for functions inside a class
             SymbolTable* our_table = NULL;
+            TypeExpression* domain = type_void();
             if((root->T->type) == TYPE_RECORD && root->T->class_flag > 0 && scope_resolution_flag == 0) {
                 // The given function name is actually a class name
                 // In case the denoted name has class type then it actually represents the __init__ constructor of that class
@@ -2379,21 +2411,17 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                     semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
                     return -1;
                 }
-                
                 SymbolTable* table = entry->tablePtr;
                 our_table = currTable;
                 currTable = table;
-                // cout << "Current table changed to " << currTable->name << " in trailer.2\n";
                 scope_resolution_flag = root->T->class_flag;
                 (root->names)[0] = "__init__";
 
                 TypeExpression* type = type_user_defined(scope_resolution_flag);
-                deque<TypeExpression*> dq = (root->children)[1]->T->fields;
-                dq.push_front(type);
-                (root->children)[1]->T = type_record(dq);
+                deque<TypeExpression*> dq = deque<TypeExpression*>(1, type);
+                domain = type_record(dq);
             }
 
-            TypeExpression* domain = type_void();
             if(scope_resolution_flag > 0) {
                 if(root->T->class_flag == 0) {
                     // The given scope resolution is a class object
@@ -2405,7 +2433,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 (root->T) = new TypeExpression();
             }
             
-            // Secind step is to contruct the type of the function being called if it's type is not already known
+            // Second step is to contruct the type of the function being called if it's type is not already known
             if((root->T->type) == TYPE_UNDF) {
                 TypeExpression* range = new TypeExpression();
                 TypeExpression* T = type_function(domain, range);
@@ -2459,7 +2487,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             if((root->T->type) != TYPE_ARRAY) {
                 // Rigorous type checking needs to be done here. If the "trailer" is not an ARRAY then this is an error
                 int type = ERR_WRG_USE;
-                string msg = "Subscript operator supported for type " + (root->T->encode);
+                string msg = "Subscript operator not supported for type " + (root->T->encode);
                 (ErrorMsg->msg) = "";
                 semantic_error_symbol(type, (root->lineno), (root->columnno), msg);
                 return -1;
@@ -3596,14 +3624,18 @@ int semantic_analysis_recursive(struct ASTNode* root) {
             // testlist_star_expr annassign
             flag = semantic_analysis_recursive((root->children)[0]);
             if (flag < 0) return flag;
+            int scope_flag = scope_resolution_flag;
             flag = semantic_analysis_recursive((root->children)[1]);
             if (flag < 0) return flag;
 
             string lexeme = (root->children)[0]->full_content;
             STentry* entry = NULL;
-            if(scope_resolution_flag > 0) entry = add(lexeme, "MEMBER_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno,&flag);
-            else if(currTable->parent != NULL) entry = add(lexeme, "LOCAL_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno,&flag);
-            else entry = add(lexeme, "GLOBAL_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno, &flag);
+            
+            // cout << "Making an entry with scope flag = " << scope_flag << "\n";
+            if(scope_flag > 0) entry = add(lexeme, "MEMBER_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno, &flag);
+            else if(currTable->parent != NULL) entry = add(lexeme, "LOCAL_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno,&flag, NULL, 0);
+            else entry = add(lexeme, "GLOBAL_VARIABLE", (root->children)[1]->T, root->lineno, root->columnno, &flag, NULL, 0);
+            
             if(entry == NULL) {
                 // Some error has occured in the Symbol Table. Handle this in Semantic error handling
                 string error_message = "Error in declaration of variable";
@@ -4140,6 +4172,12 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 flag = semantic_analysis_recursive((root->children)[3]);
                 if (flag < 0) return flag;
 
+                // RECORD correction in types of annassign statement
+                if((root->children)[1]->T->type != TYPE_RECORD && (root->children)[3]->T->type == TYPE_RECORD) {
+                    int num_fields = ((root->children)[3]->T->fields).size();
+                    if(num_fields == 1) (root->children)[3]->T = ((root->children)[3]->T->fields)[0];
+                }
+                
                 // SCOPE AND TYPE CHECKING
                 // scope checking is not required because that would have been already done on "atom_expr" level.
                 int type_check_flag = type_check_with_typecast((root->children)[1]->T, (root->children)[3]->T);
@@ -4160,7 +4198,7 @@ int semantic_analysis_recursive(struct ASTNode* root) {
                 (root->declarations).insert(
                     (root->declarations).end(),
                     ((root->children)[3]->declarations).begin(), ((root->children)[3]->declarations).end()
-                );
+                );               
                 break;
             }
             case 2: {

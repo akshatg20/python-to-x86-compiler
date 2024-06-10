@@ -6,8 +6,8 @@ def main() -> None:
     y : int = 4
     for i in range(x + 1):
         j : int = 0
+        val : int = 1
         for j in range(y + 1):
-            val : int = 1
             val = x * y
         print("Value of product is ", val)
     return
