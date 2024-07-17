@@ -1,6 +1,6 @@
 # Python Compiler
 
-This is the repository to store source code for python compilation toolchain build as a graded course project of CS335 - Compiler Design under the guidance of Prof. Swarnendu Biswas of CSE, IIT Kanpur.
+This is the repository to store source code for python compilation toolchain built as a graded course project of CS335 - Compiler Design under the guidance of Prof. Swarnendu Biswas of CSE, IIT Kanpur.
 
 For building this repository follow these steps
 ```
